@@ -112,6 +112,23 @@ document.addEventListener('DOMContentLoaded', function() {
         sourceText.value = '';
         targetText.value = '';
         errorMessage.classList.remove('active');
+        updateCharCount();
+    }
+    
+    /**
+     * 更新字符计数
+     */
+    function updateCharCount() {
+        const charCount = sourceText.value.length;
+        let charCountElement = sourceText.parentElement.querySelector('.char-count');
+        
+        if (!charCountElement) {
+            charCountElement = document.createElement('span');
+            charCountElement.className = 'char-count';
+            sourceText.parentElement.appendChild(charCountElement);
+        }
+        
+        charCountElement.textContent = `${charCount} 字符`;
     }
     
     // 事件监听
