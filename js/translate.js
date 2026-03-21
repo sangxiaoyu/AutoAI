@@ -126,10 +126,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // 输入时清除错误提示
+    // 输入时清除错误提示并更新字符计数
     sourceText.addEventListener('input', function() {
         errorMessage.classList.remove('active');
+        updateCharCount();
     });
+    
+    // 语言选择变化时清除错误提示
+    sourceLang.addEventListener('change', function() {
+        errorMessage.classList.remove('active');
+    });
+    
+    targetLang.addEventListener('change', function() {
+        errorMessage.classList.remove('active');
+    });
+    
+    // 初始化字符计数
+    updateCharCount();
     
     // 示例：默认显示一些示例文本
     sourceText.value = 'Hello, how are you?';
