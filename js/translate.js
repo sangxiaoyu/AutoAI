@@ -136,9 +136,74 @@ document.addEventListener('DOMContentLoaded', function() {
     swapBtn.addEventListener('click', swapLanguages);
     clearBtn.addEventListener('click', clearAll);
     
-    // 快捷键：Ctrl + Enter 翻译
+    // 移动设备触摸事件优化
+    translateBtn.addEventListener('touchstart', function(e) {
+        this.classList.add('touch-active');
+        e.preventDefault();
+    });
+    
+    translateBtn.addEventListener('touchend', function() {
+        this.classList.remove('touch-active');
+    });
+    
+    clearBtn.addEventListener('touchstart', function(e) {
+        this.classList.add('touch-active');
+        e.preventDefault();
+    });
+    
+    clearBtn.addEventListener('touchend', function() {
+        this.classList.remove('touch-active');
+    });
+    
+    swapBtn.addEventListener('touchstart', function(e) {
+        this.classList.add('touch-active');
+        e.preventDefault();
+    });
+    
+    swapBtn.addEventListener('touchend', function() {
+        this.classList.remove('touch-active');
+    });
+    
+    // 移动设备长按清空
+    let clearTimer;
+    sourceText.addEventListener('touchstart', function() {
+        clearTimer = setTimeout(() => {
+            if (this.value.trim() && confirm('是否清空输入框内容？')) {
+                this.value = '';
+                updateCharCount();
+            }
+        }, 1000);
+    });
+    
+    sourceText.addEventListener('touchend', function() {
+        clearTimeout(clearTimer);
+    });
+    
+    sourceText.addEventListener('touchmove', function() {
+        clearTimeout(clearTimer);
+    });
+    
+    // 移动设备虚拟键盘优化
+    sourceText.addEventListener('focus', function() {
+        if (window.innerWidth <= 768) {
+            // 在手机上，确保输入框在可视区域内
+            setTimeout(() => {
+                this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+    });
+    
+    // 快捷键：Ctrl + Enter 翻译 (桌面设备)
     sourceText.addEventListener('keydown', function(e) {
         if (e.ctrlKey && e.key === 'Enter') {
+            translate();
+        }
+    });
+    
+    // 移动设备回车键翻译
+    sourceText.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && window.innerWidth <= 768) {
+            e.preventDefault();
             translate();
         }
     });

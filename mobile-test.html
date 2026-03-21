@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动设备适配测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .test-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #444;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-title::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .test-desc {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .test-result {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        
+        .device-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .info-card {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .info-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .test-section {
+                padding: 15px;
+            }
+            
+            .device-info {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 移动设备适配测试</h1>
+        
+        <div class="test-section">
+            <div class="test-title">响应式布局测试</div>
+            <div class="test-desc">检查页面在不同屏幕尺寸下的布局适应性</div>
+            <div class="test-result" id="responsiveTest">
+                正在检测响应式布局...
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">触摸事件测试</div>
+            <div class="test-desc">验证触摸事件是否正常工作</div>
+            <div class="test-result" id="touchTest">
+                点击此处测试触摸事件
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">视口设置测试</div>
+            <div class="test-desc">检查移动设备视口设置是否正确</div>
+            <div class="test-result" id="viewportTest">
+                正在检测视口设置...
+            </div>
+        </div>
+        
+        <div class="device-info">
+            <div class="info-card">
+                <div class="info-label">屏幕宽度</div>
+                <div class="info-value" id="screenWidth">-</div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-label">屏幕高度</div>
+                <div class="info-value" id="screenHeight">-</div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-label">设备像素比</div>
+                <div class="info-value" id="pixelRatio">-</div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-label">触摸支持</div>
+                <div class="info-value" id="touchSupport">-</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 设备信息检测
+        function updateDeviceInfo() {
+            document.getElementById('screenWidth').textContent = window.innerWidth + 'px';
+            document.getElementById('screenHeight').textContent = window.innerHeight + 'px';
+            document.getElementById('pixelRatio').textContent = window.devicePixelRatio || 1;
+            document.getElementById('touchSupport').textContent = 
+                'ontouchstart' in window ? '是' : '否';
+        }
+        
+        // 响应式布局测试
+        function testResponsive() {
+            const width = window.innerWidth;
+            let result = '';
+            
+            if (width >= 1200) {
+                result = '超大屏幕 (≥1200px) - 桌面设备布局';
+            } else if (width >= 992) {
+                result = '大屏幕 (992px-1199px) - 桌面设备布局';
+            } else if (width >= 768) {
+                result = '中等屏幕 (768px-991px) - 平板设备布局';
+            } else if (width >= 576) {
+                result = '小屏幕 (576px-767px) - 手机横向布局';
+            } else {
+                result = '超小屏幕 (<576px) - 手机纵向布局';
+            }
+            
+            document.getElementById('responsiveTest').textContent = 
+                `当前屏幕宽度: ${width}px - ${result}`;
+        }
+        
+        // 触摸事件测试
+        function setupTouchTest() {
+            const touchElement = document.getElementById('touchTest');
+            let touchCount = 0;
+            
+            touchElement.addEventListener('click', function() {
+                touchCount++;
+                this.textContent = `点击次数: ${touchCount} - 点击事件正常`;
+                this.style.backgroundColor = '#d1fae5';
+                setTimeout(() => {
+                    this.style.backgroundColor = '';
+                }, 500);
+            });
+            
+            touchElement.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                this.textContent = '触摸开始 - 触摸事件正常';
+                this.style.backgroundColor = '#fef3c7';
+            });
+            
+            touchElement.addEventListener('touchend', function() {
+                setTimeout(() => {
+                    this.style.backgroundColor = '';
+                }, 300);
+            });
+        }
+        
+        // 视口测试
+        function testViewport() {
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+            let result = '';
+            
+            if (viewportMeta) {
+                const content = viewportMeta.getAttribute('content');
+                result = `视口设置: ${content}`;
+                
+                // 检查关键设置
+                if (content.includes('width=device-width')) {
+                    result += ' ✓ 宽度适配';
+                }
+                if (content.includes('initial-scale=1')) {
+                    result += ' ✓ 初始缩放';
+                }
+                if (content.includes('user-scalable=no')) {
+                    result += ' ✓ 禁止缩放';
+                }
+            } else {
+                result = '警告: 未找到视口meta标签';
+            }
+            
+            document.getElementById('viewportTest').textContent = result;
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDeviceInfo();
+            testResponsive();
+            setupTouchTest();
+            testViewport();
+            
+            // 窗口大小变化时更新
+            window.addEventListener('resize', function() {
+                updateDeviceInfo();
+                testResponsive();
+            });
+            
+            // 设备方向变化时更新
+            window.addEventListener('orientationchange', function() {
+                setTimeout(() => {
+                    updateDeviceInfo();
+                    testResponsive();
+                }, 300);
+            });
+        });
+        
+        // 性能监控
+        window.addEventListener('load', function() {
+            if ('performance' in window) {
+                const perfData = window.performance.timing;
+                const loadTime = perfData.loadEventEnd - perfData.navigationStart;
+                console.log(`页面加载完成，耗时: ${loadTime}ms`);
+            }
+        });
+    </script>
+</body>
+</html>
