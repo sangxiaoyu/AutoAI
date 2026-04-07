@@ -37,197 +37,142 @@
             <div class="tool-container">
                 <!-- JSON 格式化工具 -->
                 <div class="tool-section active" id="json-tool">
-                    <div class="input-section">
-                        <div class="section-header">
-                            <h3><i class="fas fa-arrow-right-to-bracket"></i> 输入 JSON</h3>
-                            <div class="action-buttons">
-                                <button class="btn btn-secondary" id="json-example">
-                                    <i class="fas fa-eye"></i> 示例
-                                </button>
-                                <button class="btn btn-secondary" id="json-clear">
-                                    <i class="fas fa-trash"></i> 清空
-                                </button>
-                                <button class="btn btn-secondary" id="json-paste">
-                                    <i class="fas fa-paste"></i> 粘贴
-                                </button>
+                    <div class="json-editor-layout">
+                        <div class="json-editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-file-code"></i> JSON 1</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-secondary btn-sm" id="json-example-left" title="加载示例JSON"><i class="fas fa-eye"></i></button>
+                                    <button class="btn btn-secondary btn-sm" id="json-clear-left" title="清空内容"><i class="fas fa-trash"></i></button>
+                                    <button class="btn btn-secondary btn-sm" id="json-paste-left" title="从剪贴板粘贴"><i class="fas fa-paste"></i></button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="json-input-left" placeholder='{"name": "张三"}'></textarea>
+                            </div>
+                            <div class="editor-footer">
+                                <span class="char-count" id="json-left-count">0 字符</span>
+                                <span class="status" id="json-left-status">就绪</span>
                             </div>
                         </div>
-                        <div class="code-editor">
-                            <textarea id="json-input" placeholder='输入 JSON 代码，例如：{"name": "John", "age": 30, "city": "New York"}'></textarea>
+
+                        <div class="json-editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-file-code"></i> JSON 2</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-info btn-sm" id="json-example-right" title="加载示例JSON"><i class="fas fa-eye"></i></button>
+                                    <button class="btn btn-info btn-sm" id="json-clear-right" title="清空内容"><i class="fas fa-trash"></i></button>
+                                    <button class="btn btn-info btn-sm" id="json-paste-right" title="从剪贴板粘贴"><i class="fas fa-paste"></i></button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="json-input-right" placeholder='{"name": "李四"}'></textarea>
+                            </div>
                             <div class="editor-footer">
-                                <span class="char-count" id="json-char-count">0 字符</span>
-                                <span class="status" id="json-status">就绪</span>
+                                <span class="char-count" id="json-right-count">0 字符</span>
+                                <span class="status" id="json-right-status">就绪</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="controls-section">
-                        <div class="format-options">
-                            <h4><i class="fas fa-sliders"></i> 格式化选项</h4>
-                            <div class="options-grid">
-                                <div class="option">
-                                    <label>
-                                        <input type="checkbox" id="json-pretty" checked>
-                                        美化格式
-                                    </label>
-                                </div>
-                                <div class="option">
-                                    <label>
-                                        <input type="checkbox" id="json-sort" checked>
-                                        按键排序
-                                    </label>
-                                </div>
-                                <div class="option">
-                                    <label>
-                                        <input type="number" id="json-indent" min="1" max="8" value="2">
-                                        缩进空格
-                                    </label>
-                                </div>
-                                <div class="option">
-                                    <label>
-                                        <input type="checkbox" id="json-validate" checked>
-                                        验证 JSON
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="action-buttons">
-                            <button class="btn btn-primary" id="json-format">
-                                <i class="fas fa-magic"></i> 格式化 JSON
-                            </button>
-                            <button class="btn btn-success" id="json-minify">
-                                <i class="fas fa-compress"></i> 压缩 JSON
-                            </button>
-                            <button class="btn btn-info" id="json-copy">
-                                <i class="fas fa-copy"></i> 复制结果
-                            </button>
+                            <button class="btn btn-primary" id="json-format" title="格式化JSON并对比两个JSON的差异"><i class="fas fa-magic"></i> 格式化 & 对比</button>
+                            <button class="btn btn-success" id="json-minify" title="压缩JSON为单行格式"><i class="fas fa-compress"></i> 压缩</button>
                         </div>
                     </div>
 
-                    <div class="output-section">
-                        <div class="section-header">
-                            <h3><i class="fas fa-arrow-right-from-bracket"></i> 格式化结果</h3>
-                            <div class="action-buttons">
-                                <button class="btn btn-secondary" id="json-download">
-                                    <i class="fas fa-download"></i> 下载
-                                </button>
+                    <!-- 差异汇总 -->
+                    <div class="diff-summary-panel" id="diff-summary" style="display: none;">
+                        <div class="diff-cards">
+                            <div class="diff-card diff-equal-card" id="diff-equal-card">
+                                <i class="fas fa-check-circle"></i>
+                                <span>完全相同</span>
+                            </div>
+                            <div class="diff-card diff-added-card" id="diff-added-card">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>新增 <b id="diff-added-count">0</b> 项</span>
+                            </div>
+                            <div class="diff-card diff-removed-card" id="diff-removed-card">
+                                <i class="fas fa-minus-circle"></i>
+                                <span>删除 <b id="diff-removed-count">0</b> 项</span>
+                            </div>
+                            <div class="diff-card diff-modified-card" id="diff-modified-card">
+                                <i class="fas fa-pen-circle"></i>
+                                <span>修改 <b id="diff-modified-count">0</b> 项</span>
                             </div>
                         </div>
-                        <div class="code-output">
-                            <pre id="json-output"><code class="language-json">格式化结果将显示在这里...</code></pre>
-                            <div class="output-footer">
-                                <span class="char-count" id="json-output-count">0 字符</span>
-                                <span class="status" id="json-output-status">等待输入</span>
-                            </div>
-                        </div>
+                        <div class="diff-detail" id="diff-detail"></div>
                     </div>
                 </div>
 
                 <!-- SQL 格式化工具 -->
                 <div class="tool-section" id="sql-tool">
-                    <div class="input-section">
-                        <div class="section-header">
-                            <h3><i class="fas fa-arrow-right-to-bracket"></i> 输入 SQL</h3>
-                            <div class="action-buttons">
-                                <button class="btn btn-secondary" id="sql-example">
-                                    <i class="fas fa-eye"></i> 示例
-                                </button>
-                                <button class="btn btn-secondary" id="sql-clear">
-                                    <i class="fas fa-trash"></i> 清空
-                                </button>
-                                <button class="btn btn-secondary" id="sql-paste">
-                                    <i class="fas fa-paste"></i> 粘贴
-                                </button>
+                    <div class="json-editor-layout">
+                        <div class="json-editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-file-code"></i> SQL 1</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-secondary btn-sm" id="sql-example-left" title="加载示例SQL"><i class="fas fa-eye"></i></button>
+                                    <button class="btn btn-secondary btn-sm" id="sql-clear-left" title="清空内容"><i class="fas fa-trash"></i></button>
+                                    <button class="btn btn-secondary btn-sm" id="sql-paste-left" title="从剪贴板粘贴"><i class="fas fa-paste"></i></button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="sql-input-left" placeholder="SELECT * FROM users WHERE id = 1"></textarea>
+                            </div>
+                            <div class="editor-footer">
+                                <span class="char-count" id="sql-left-count">0 字符</span>
+                                <span class="status" id="sql-left-status">就绪</span>
                             </div>
                         </div>
-                        <div class="code-editor">
-                            <textarea id="sql-input" placeholder="输入 SQL 语句，例如：SELECT * FROM users WHERE age > 18 ORDER BY name ASC"></textarea>
+
+                        <div class="json-editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-file-code"></i> SQL 2</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-info btn-sm" id="sql-example-right" title="加载示例SQL"><i class="fas fa-eye"></i></button>
+                                    <button class="btn btn-info btn-sm" id="sql-clear-right" title="清空内容"><i class="fas fa-trash"></i></button>
+                                    <button class="btn btn-info btn-sm" id="sql-paste-right" title="从剪贴板粘贴"><i class="fas fa-paste"></i></button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="sql-input-right" placeholder="SELECT id, name FROM orders"></textarea>
+                            </div>
                             <div class="editor-footer">
-                                <span class="char-count" id="sql-char-count">0 字符</span>
-                                <span class="status" id="sql-status">就绪</span>
+                                <span class="char-count" id="sql-right-count">0 字符</span>
+                                <span class="status" id="sql-right-status">就绪</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="controls-section">
-                        <div class="format-options">
-                            <h4><i class="fas fa-sliders"></i> 格式化选项</h4>
-                            <div class="options-grid">
-                                <div class="option">
-                                    <label>
-                                        <input type="checkbox" id="sql-keywords-upper" checked>
-                                        关键字大写
-                                    </label>
-                                </div>
-                                <div class="option">
-                                    <label>
-                                        <input type="checkbox" id="sql-indent" checked>
-                                        自动缩进
-                                    </label>
-                                </div>
-                                <div class="option">
-                                    <label>
-                                        <input type="number" id="sql-indent-size" min="1" max="8" value="2">
-                                        缩进大小
-                                    </label>
-                                </div>
-                                <div class="option">
-                                    <label>
-                                        <input type="checkbox" id="sql-line-breaks" checked>
-                                        换行优化
-                                    </label>
-                                </div>
-                                <div class="option">
-                                    <label>
-                                        <input type="checkbox" id="sql-validate" checked>
-                                        语法检查
-                                    </label>
-                                </div>
-                                <div class="option">
-                                    <label>
-                                        <select id="sql-dialect">
-                                            <option value="mysql">MySQL</option>
-                                            <option value="postgresql">PostgreSQL</option>
-                                            <option value="sqlserver">SQL Server</option>
-                                            <option value="oracle">Oracle</option>
-                                            <option value="sqlite">SQLite</option>
-                                        </select>
-                                        SQL 方言
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="action-buttons">
-                            <button class="btn btn-primary" id="sql-format">
-                                <i class="fas fa-magic"></i> 格式化 SQL
-                            </button>
-                            <button class="btn btn-warning" id="sql-beautify">
-                                <i class="fas fa-paint-brush"></i> 美化 SQL
-                            </button>
-                            <button class="btn btn-info" id="sql-copy">
-                                <i class="fas fa-copy"></i> 复制结果
-                            </button>
+                            <button class="btn btn-primary" id="sql-format" title="格式化SQL并对比差异"><i class="fas fa-magic"></i> 格式化 & 对比</button>
                         </div>
                     </div>
 
-                    <div class="output-section">
-                        <div class="section-header">
-                            <h3><i class="fas fa-arrow-right-from-bracket"></i> 格式化结果</h3>
-                            <div class="action-buttons">
-                                <button class="btn btn-secondary" id="sql-download">
-                                    <i class="fas fa-download"></i> 下载
-                                </button>
+                    <!-- SQL 汇总 -->
+                    <div class="diff-summary-panel" id="sql-summary" style="display: none;">
+                        <div class="diff-cards">
+                            <div class="diff-card diff-equal-card" id="sql-equal-card">
+                                <i class="fas fa-check-circle"></i>
+                                <span>格式化成功</span>
+                            </div>
+                            <div class="diff-card diff-added-card" id="sql-added-card" style="display: none;">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>新增 <b id="sql-added-count">0</b> 项</span>
+                            </div>
+                            <div class="diff-card diff-removed-card" id="sql-removed-card" style="display: none;">
+                                <i class="fas fa-minus-circle"></i>
+                                <span>删除 <b id="sql-removed-count">0</b> 项</span>
+                            </div>
+                            <div class="diff-card diff-error-card-sql" id="sql-error-card" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>语法错误</span>
                             </div>
                         </div>
-                        <div class="code-output">
-                            <pre id="sql-output"><code class="language-sql">格式化结果将显示在这里...</code></pre>
-                            <div class="output-footer">
-                                <span class="char-count" id="sql-output-count">0 字符</span>
-                                <span class="status" id="sql-output-status">等待输入</span>
-                            </div>
-                        </div>
+                        <div class="diff-detail" id="sql-detail"></div>
                     </div>
                 </div>
             </div>
@@ -238,7 +183,7 @@
                     <div class="feature">
                         <i class="fas fa-check-circle"></i>
                         <h4>JSON 格式化</h4>
-                        <p>美化、压缩、验证 JSON 数据，支持语法高亮</p>
+                        <p>美化、压缩、验证 JSON 数据，支持左右对比</p>
                     </div>
                     <div class="feature">
                         <i class="fas fa-check-circle"></i>

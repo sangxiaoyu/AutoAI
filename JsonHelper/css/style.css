@@ -47,7 +47,7 @@ body {
 .header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 40px 30px;
+    padding: 20px 30px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -84,24 +84,24 @@ body {
 }
 
 .logo i {
-    font-size: 2.5rem;
+    font-size: 1.5rem;
     color: #fff;
     background: rgba(255, 255, 255, 0.2);
-    padding: 15px;
-    border-radius: 15px;
+    padding: 10px;
+    border-radius: 10px;
     backdrop-filter: blur(10px);
 }
 
 .logo h1 {
-    font-size: 2.2rem;
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 600;
     letter-spacing: -0.5px;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .subtitle {
-    font-size: 1.1rem;
-    opacity: 0.9;
+    font-size: 0.9rem;
+    opacity: 0.8;
     max-width: 600px;
     margin: 0 auto;
     font-weight: 300;
@@ -156,6 +156,239 @@ body {
 
 .tool-tab i {
     font-size: 1.2rem;
+}
+
+/* JSON 编辑器布局 */
+.json-editor-layout {
+    display: flex;
+    gap: 20px;
+}
+
+.json-editor-panel {
+    flex: 1;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.code-editor.enhanced {
+    flex: 1;
+}
+
+.code-editor.enhanced textarea {
+    min-height: 350px;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-sm i {
+    margin: 0;
+}
+
+/* 差异汇总面板 */
+.diff-summary-panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.diff-cards {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.diff-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 22px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.diff-card i {
+    font-size: 1.4rem;
+}
+
+.diff-equal-card {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    flex: 1;
+}
+
+.diff-equal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(21, 87, 36, 0.25);
+}
+
+.diff-added-card {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+    flex: 1;
+}
+
+.diff-added-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(12, 84, 96, 0.25);
+}
+
+.diff-removed-card {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    flex: 1;
+}
+
+.diff-removed-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(114, 28, 36, 0.25);
+}
+
+.diff-modified-card {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+    flex: 1;
+}
+
+.diff-modified-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(133, 100, 4, 0.25);
+}
+
+.diff-detail {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.diff-item-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.diff-item-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.diff-item-card.added {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    border-left: 5px solid #17a2b8;
+}
+
+.diff-item-card.removed {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-left: 5px solid #dc3545;
+}
+
+.diff-item-card.modified {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-left: 5px solid #ffc107;
+}
+
+.diff-item-card .diff-icon {
+    font-size: 1.1rem;
+    margin-top: 2px;
+}
+
+.diff-item-card .diff-content {
+    flex: 1;
+}
+
+.diff-item-card .diff-path {
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+.diff-item-card .diff-values {
+    color: #555;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.diff-item-card .diff-values .old {
+    color: #dc3545;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+.diff-item-card .diff-values .new {
+    color: #00b894;
+    font-weight: 600;
+}
+
+/* 错误提示卡片 */
+.diff-error-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-radius: 12px;
+    border-left: 5px solid #dc3545;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.15);
+}
+
+.diff-error-icon {
+    font-size: 1.6rem;
+    color: #dc3545;
+    margin-top: 2px;
+}
+
+.diff-error-content {
+    flex: 1;
+}
+
+.diff-error-title {
+    font-weight: 700;
+    color: #721c24;
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.diff-error-details {
+    color: #721c24;
+    font-size: 0.9rem;
+    font-family: 'Consolas', monospace;
+    opacity: 0.85;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 10px 12px;
+    border-radius: 6px;
+}
+
+/* SQL 错误卡片 */
+.diff-error-card-sql {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    flex: 1;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.2);
+}
+
+.diff-error-card-sql:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
 }
 
 /* 工具容器 */
@@ -378,47 +611,158 @@ body {
     cursor: pointer;
 }
 
-/* 按钮样式 */
+/* 按钮样式 - 现代化设计 */
 .btn {
-    padding: 12px 24px;
+    padding: 12px 28px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+    pointer-events: none;
 }
 
 .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 .btn:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #5a6fd8 0%, #6a4090 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
 }
 
 .btn-secondary {
-    background: #6c757d;
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
     color: white;
+    box-shadow: 0 4px 15px rgba(127, 140, 141, 0.3);
 }
 
 .btn-secondary:hover {
-    background: #5a6268;
+    background: linear-gradient(135deg, #7f8c8d 0%, #707b7c 100%);
+    box-shadow: 0 6px 20px rgba(127, 140, 141, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #00a884 0%, #00beae 100%);
+    box-shadow: 0 6px 20px rgba(0, 184, 148, 0.5);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(9, 132, 227, 0.4);
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #0984e3 0%, #0652dd 100%);
+    box-shadow: 0 6px 20px rgba(9, 132, 227, 0.5);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #fdcb6e 0%, #f39c12 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    box-shadow: 0 6px 20px rgba(243, 156, 18, 0.5);
+}
+
+/* 小按钮样式 - 现代化设计 */
+.btn-sm {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+}
+
+.btn-sm:hover {
+    background: linear-gradient(135deg, #7f8c8d 0%, #707b7c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-sm:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* 右侧面板按钮 - 蓝色系 */
+.btn-info.btn-sm {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-info.btn-sm:hover {
+    background: linear-gradient(135deg, #0984e3 0%, #0652dd 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(9, 132, 227, 0.4);
+}
+
+.btn-info.btn-sm:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(9, 132, 227, 0.3);
+}
+
+.btn-sm i {
+    margin: 0;
+    font-size: 0.95rem;
 }
 
 .btn-success {
@@ -643,71 +987,84 @@ body {
     html {
         font-size: 15px;
     }
-    
+
     body {
         padding: 10px;
     }
-    
+
     .header {
         padding: 30px 20px;
     }
-    
+
     .logo {
         flex-direction: column;
         text-align: center;
         gap: 10px;
     }
-    
+
     .logo h1 {
         font-size: 1.8rem;
     }
-    
+
     .tool-tabs {
         flex-direction: column;
     }
-    
+
     .main-content {
         padding: 20px;
     }
-    
+
     .section-header {
         flex-direction: column;
         gap: 15px;
         text-align: center;
     }
-    
+
     .action-buttons {
         flex-wrap: wrap;
         justify-content: center;
     }
-    
+
     .controls-section .action-buttons {
         flex-direction: column;
     }
-    
+
     .btn {
         width: 100%;
         justify-content: center;
     }
-    
+
     .options-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .features-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .footer-links {
         flex-direction: column;
         gap: 10px;
     }
-    
+
     .toast {
         left: 20px;
         right: 20px;
         bottom: 20px;
         max-width: none;
+    }
+
+    /* JSON 编辑器响应式 */
+    .json-editor-layout {
+        flex-direction: column;
+    }
+
+    .diff-cards {
+        flex-wrap: wrap;
+    }
+
+    .diff-card {
+        flex: 1 1 45%;
     }
 }
 

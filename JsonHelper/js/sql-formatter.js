@@ -1,808 +1,443 @@
 /**
- * SQL 格式化工具
- * 提供 SQL 语句的格式化、美化、语法高亮和验证功能
+ * SQL 格式化工具 - 简化版
  */
 
-// SQL 关键字列表（多种数据库方言）
-const SQL_KEYWORDS = {
-    common: [
-        'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT',
-        'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE',
-        'CREATE', 'TABLE', 'VIEW', 'INDEX', 'DATABASE', 'SCHEMA',
-        'ALTER', 'ADD', 'DROP', 'MODIFY', 'RENAME', 'TRUNCATE',
-        'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL JOIN',
-        'ON', 'AS', 'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN',
-        'IS', 'NULL', 'DISTINCT', 'UNION', 'ALL', 'EXISTS',
-        'CASE', 'WHEN', 'THEN', 'ELSE', 'END',
-        'BEGIN', 'COMMIT', 'ROLLBACK', 'SAVEPOINT',
-        'GRANT', 'REVOKE', 'PRIMARY KEY', 'FOREIGN KEY',
-        'REFERENCES', 'CONSTRAINT', 'UNIQUE', 'CHECK',
-        'DEFAULT', 'AUTO_INCREMENT', 'IDENTITY'
-    ],
-    mysql: [
-        'ENGINE', 'CHARSET', 'COLLATE',
-        'IF NOT EXISTS', 'IF EXISTS',
-        'AUTO_INCREMENT', 'CHARACTER SET',
-        'ROW_FORMAT', 'COMMENT',
-        'PARTITION BY', 'PARTITIONS',
-        'STORAGE', 'INNODB', 'MYISAM'
-    ],
-    postgresql: [
-        'SERIAL', 'BIGSERIAL', 'TEXT', 'BYTEA',
-        'IF NOT EXISTS', 'IF EXISTS',
-        'WITH', 'WITHOUT', 'TIME ZONE',
-        'RETURNING', 'EXCEPT', 'INTERSECT',
-        'WINDOW', 'OVER', 'PARTITION BY',
-        'RANGE', 'ROWS', 'PRECEDING', 'FOLLOWING'
-    ],
-    sqlserver: [
-        'TOP', 'WITH', 'NOLOCK', 'ROWCOUNT',
-        'OUTPUT', 'INSERTED', 'DELETED',
-        'TRY', 'CATCH', 'THROW',
-        'PIVOT', 'UNPIVOT', 'APPLY',
-        'OVER', 'PARTITION BY'
-    ],
-    oracle: [
-        'SEQUENCE', 'TRIGGER', 'SYNONYM',
-        'ROWNUM', 'CONNECT BY', 'LEVEL',
-        'START WITH', 'PRIOR', 'DUAL',
-        'DECLARE', 'BEGIN', 'EXCEPTION',
-        'RAISE', 'END'
-    ],
-    sqlite: [
-        'WITHOUT ROWID', 'STRICT',
-        'CHECK', 'DEFAULT', 'COLLATE',
-        'PRIMARY KEY', 'UNIQUE', 'NOT NULL'
-    ]
-};
+document.addEventListener('DOMContentLoaded', function() {
+    initSQLTool();
+});
 
-// SQL 函数列表
-const SQL_FUNCTIONS = [
-    'COUNT', 'SUM', 'AVG', 'MIN', 'MAX',
-    'UPPER', 'LOWER', 'SUBSTRING', 'TRIM',
-    'CONCAT', 'COALESCE', 'NULLIF',
-    'DATE', 'TIME', 'DATETIME', 'NOW',
-    'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'SECOND',
-    'ABS', 'ROUND', 'CEIL', 'FLOOR',
-    'ROW_NUMBER', 'RANK', 'DENSE_RANK',
-    'LAG', 'LEAD', 'FIRST_VALUE', 'LAST_VALUE'
-];
+function initSQLTool() {
+    initSQLCharCounters();
+    bindSQLEvents();
+    initSQLStatus();
+}
 
-// SQL 运算符
-const SQL_OPERATORS = ['=', '<>', '!=', '<', '>', '<=', '>=', '+', '-', '*', '/', '%'];
+function initSQLCharCounters() {
+    const leftInput = document.getElementById('sql-input-left');
+    const rightInput = document.getElementById('sql-input-right');
 
-// 覆盖主文件中的占位函数
+    if (leftInput) {
+        leftInput.addEventListener('input', () => {
+            updateCharCount('sql-input-left', 'sql-left-count');
+        });
+        updateCharCount('sql-input-left', 'sql-left-count');
+    }
+
+    if (rightInput) {
+        rightInput.addEventListener('input', () => {
+            updateCharCount('sql-input-right', 'sql-right-count');
+        });
+        updateCharCount('sql-input-right', 'sql-right-count');
+    }
+}
+
+function bindSQLEvents() {
+    // 主按钮
+    document.getElementById('sql-format')?.addEventListener('click', formatSQL);
+
+    // 左侧按钮
+    document.getElementById('sql-example-left')?.addEventListener('click', () => loadSQLExample('left'));
+    document.getElementById('sql-clear-left')?.addEventListener('click', () => clearSQLInput('left'));
+    document.getElementById('sql-paste-left')?.addEventListener('click', () => pasteSQLInput('left'));
+
+    // 右侧按钮
+    document.getElementById('sql-example-right')?.addEventListener('click', () => loadSQLExample('right'));
+    document.getElementById('sql-clear-right')?.addEventListener('click', () => clearSQLInput('right'));
+    document.getElementById('sql-paste-right')?.addEventListener('click', () => pasteSQLInput('right'));
+}
+
+function initSQLStatus() {
+    ['left', 'right'].forEach(side => {
+        const status = document.getElementById(`sql-${side}-status`);
+        if (status) {
+            status.textContent = '就绪';
+            status.className = 'status info';
+        }
+    });
+}
+
+/**
+ * 格式化并对比 SQL
+ */
 window.formatSQL = function() {
-    const input = document.getElementById('sql-input');
-    const output = document.getElementById('sql-output');
-    const code = output.querySelector('code');
-    
-    if (!input || !output || !code) {
-        showToast('系统错误：找不到必要的元素', 'error');
-        return;
-    }
-    
-    const text = input.value.trim();
-    if (!text) {
-        showToast('请输入 SQL 语句', 'warning');
-        return;
-    }
-    
-    // 获取格式化选项
-    const keywordsUpper = document.getElementById('sql-keywords-upper').checked;
-    const autoIndent = document.getElementById('sql-indent').checked;
-    const indentSize = parseInt(document.getElementById('sql-indent-size').value) || 2;
-    const lineBreaks = document.getElementById('sql-line-breaks').checked;
-    const validate = document.getElementById('sql-validate').checked;
-    const dialect = document.getElementById('sql-dialect').value;
-    
-    try {
-        // 验证 SQL
-        if (validate) {
-            validateSQLSyntax(text, dialect);
-        }
-        
-        // 格式化 SQL
-        let formatted = text;
-        
-        // 1. 标准化换行和空格
-        formatted = normalizeWhitespace(formatted);
-        
-        // 2. 关键字大写（如果启用）
-        if (keywordsUpper) {
-            formatted = uppercaseKeywords(formatted, dialect);
-        }
-        
-        // 3. 添加缩进（如果启用）
-        if (autoIndent) {
-            formatted = addIndentation(formatted, indentSize);
-        }
-        
-        // 4. 优化换行（如果启用）
-        if (lineBreaks) {
-            formatted = optimizeLineBreaks(formatted);
-        }
-        
-        // 5. 添加分号（如果没有）
-        formatted = addSemicolon(formatted);
-        
-        // 更新输出
-        code.textContent = formatted;
-        code.className = 'language-sql';
-        
-        // 应用语法高亮
-        applySQLSyntaxHighlighting(code, dialect);
-        
-        // 更新状态
-        updateStatus('sql-output-status', '✓ 格式化完成', 'success');
-        updateStatus('sql-status', '✓ SQL 语法基本正确', 'success');
-        
-        // 显示成功消息
-        showToast('SQL 格式化成功', 'success');
-        
-        // 更新字符计数
-        updateSQLOutputCharCount();
-        
-    } catch (error) {
-        // 处理格式化错误
-        handleSQLError(error, text, code, dialect);
-    }
-};
+    const leftInput = document.getElementById('sql-input-left');
+    const rightInput = document.getElementById('sql-input-right');
+    if (!leftInput || !rightInput) return;
 
-// 美化 SQL（更高级的格式化）
-window.beautifySQL = function() {
-    const input = document.getElementById('sql-input');
-    const output = document.getElementById('sql-output');
-    const code = output.querySelector('code');
-    
-    if (!input || !output || !code) {
-        showToast('系统错误：找不到必要的元素', 'error');
-        return;
-    }
-    
-    const text = input.value.trim();
-    if (!text) {
-        showToast('请输入 SQL 语句', 'warning');
-        return;
-    }
-    
-    // 获取格式化选项
-    const keywordsUpper = document.getElementById('sql-keywords-upper').checked;
-    const autoIndent = document.getElementById('sql-indent').checked;
-    const indentSize = parseInt(document.getElementById('sql-indent-size').value) || 2;
-    const lineBreaks = document.getElementById('sql-line-breaks').checked;
-    const validate = document.getElementById('sql-validate').checked;
-    const dialect = document.getElementById('sql-dialect').value;
-    
-    try {
-        // 验证 SQL
-        if (validate) {
-            validateSQLSyntax(text, dialect);
+    const leftText = leftInput.value.trim();
+    const rightText = rightInput.value.trim();
+
+    let leftValid = false, rightValid = false;
+
+    // 处理左侧SQL
+    if (leftText) {
+        try {
+            const formatted = formatSQLText(leftText);
+            leftInput.value = formatted;
+            updateStatus('sql-left-status', '✓ 已格式化', 'success');
+            leftValid = true;
+        } catch (e) {
+            updateStatus('sql-left-status', '✗ SQL 无效', 'error');
+            showSQLError('SQL 1 语法错误', e.message);
+            return;
         }
-        
-        // 美化 SQL（更细致的格式化）
-        let beautified = text;
-        
-        // 1. 标准化换行和空格
-        beautified = normalizeWhitespace(beautified);
-        
-        // 2. 关键字大写（如果启用）
-        if (keywordsUpper) {
-            beautified = uppercaseKeywords(beautified, dialect);
-        }
-        
-        // 3. 更智能的缩进
-        beautified = addSmartIndentation(beautified, indentSize);
-        
-        // 4. 优化对齐
-        beautified = optimizeAlignment(beautified);
-        
-        // 5. 添加分号（如果没有）
-        beautified = addSemicolon(beautified);
-        
-        // 6. 清理多余的空行
-        beautified = cleanExtraBlankLines(beautified);
-        
-        // 更新输出
-        code.textContent = beautified;
-        code.className = 'language-sql';
-        
-        // 应用语法高亮
-        applySQLSyntaxHighlighting(code, dialect);
-        
-        // 更新状态
-        updateStatus('sql-output-status', '✓ 美化完成', 'success');
-        updateStatus('sql-status', '✓ SQL 语法正确', 'success');
-        
-        // 显示成功消息
-        showToast('SQL 美化成功', 'success');
-        
-        // 更新字符计数
-        updateSQLOutputCharCount();
-        
-    } catch (error) {
-        // 处理美化错误
-        handleSQLError(error, text, code, dialect);
     }
+
+    // 处理右侧SQL
+    if (rightText) {
+        try {
+            const formatted = formatSQLText(rightText);
+            rightInput.value = formatted;
+            updateStatus('sql-right-status', '✓ 已格式化', 'success');
+            rightValid = true;
+        } catch (e) {
+            updateStatus('sql-right-status', '✗ SQL 无效', 'error');
+            showSQLError('SQL 2 语法错误', e.message);
+            return;
+        }
+    }
+
+    // 对比两个SQL
+    if (leftValid && rightValid) {
+        const diffs = findSQLDifferences(leftText, rightText);
+        showSQLDiffSummary(diffs);
+    } else if (leftValid || rightValid) {
+        clearSQLSummary();
+    }
+
+    updateCharCount('sql-input-left', 'sql-left-count');
+    updateCharCount('sql-input-right', 'sql-right-count');
 };
 
 /**
- * 标准化空白字符
+ * 查找 SQL 差异
  */
-function normalizeWhitespace(sql) {
-    // 替换制表符为空格
-    sql = sql.replace(/\t/g, '    ');
-    
-    // 标准化换行符
-    sql = sql.replace(/\r\n/g, '\n');
-    sql = sql.replace(/\r/g, '\n');
-    
-    // 移除行尾空格
-    sql = sql.replace(/[ \t]+$/gm, '');
-    
-    // 标准化空格：操作符周围添加空格
-    SQL_OPERATORS.forEach(op => {
-        const regex = new RegExp(`([^\\s])(${escapeRegExp(op)})([^\\s])`, 'g');
-        sql = sql.replace(regex, `$1 ${op} $3`);
-    });
-    
-    // 逗号后添加空格（除非在括号内）
-    sql = sql.replace(/,([^\s])/g, ', $1');
-    
-    return sql;
-}
+function findSQLDifferences(left, right) {
+    const diffs = [];
+    const leftNorm = normalizeSQL(left);
+    const rightNorm = normalizeSQL(right);
 
-/**
- * 大写 SQL 关键字
- */
-function uppercaseKeywords(sql, dialect) {
-    let keywords = [...SQL_KEYWORDS.common];
-    
-    // 添加方言特定的关键字
-    if (SQL_KEYWORDS[dialect]) {
-        keywords = [...keywords, ...SQL_KEYWORDS[dialect]];
+    if (leftNorm === rightNorm) {
+        return diffs;
     }
-    
-    // 排序关键字，长的先匹配，防止部分匹配
-    keywords.sort((a, b) => b.length - a.length);
-    
-    keywords.forEach(keyword => {
-        const regex = new RegExp(`\\b${keyword.replace(/\s+/g, '\\s+')}\\b`, 'gi');
-        sql = sql.replace(regex, keyword);
+
+    // 解析SQL结构
+    const leftParsed = parseSQL(left);
+    const rightParsed = parseSQL(right);
+
+    // 对比各部分
+    compareSQLPart('SELECT', leftParsed, rightParsed, diffs);
+    compareSQLPart('FROM', leftParsed, rightParsed, diffs);
+    compareSQLPart('WHERE', leftParsed, rightParsed, diffs);
+    compareSQLPart('GROUP BY', leftParsed, rightParsed, diffs);
+    compareSQLPart('ORDER BY', leftParsed, rightParsed, diffs);
+
+    // 计算相似度
+    const similarity = calculateSimilarity(leftNorm, rightNorm);
+    diffs.unshift({ type: 'similarity', value: similarity });
+
+    return diffs;
+}
+
+function normalizeSQL(sql) {
+    return sql.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/['"`]/g, "'")
+        .replace(/;$/, '')
+        .trim();
+}
+
+function parseSQL(sql) {
+    const parsed = {
+        SELECT: [],
+        FROM: [],
+        WHERE: [],
+        'GROUP BY': [],
+        'ORDER BY': [],
+        LIMIT: null,
+        JOIN: []
+    };
+
+    const selectMatch = sql.match(/SELECT\s+(.*?)\s+FROM/is);
+    if (selectMatch) {
+        parsed.SELECT = selectMatch[1].split(',').map(s => s.trim().replace(/^\(.*\)\s+AS\s+/i, ''));
+    }
+
+    const fromMatch = sql.match(/FROM\s+(\w+)/i);
+    if (fromMatch) {
+        parsed.FROM.push(fromMatch[1]);
+    }
+
+    const whereMatch = sql.match(/WHERE\s+(.*?)(?:GROUP|ORDER|LIMIT|$)/is);
+    if (whereMatch) {
+        parsed.WHERE.push(whereMatch[1].trim());
+    }
+
+    const groupMatch = sql.match(/GROUP\s+BY\s+(.*?)(?:ORDER|LIMIT|$)/is);
+    if (groupMatch) {
+        parsed['GROUP BY'] = groupMatch[1].split(',').map(s => s.trim());
+    }
+
+    const orderMatch = sql.match(/ORDER\s+BY\s+(.*?)(?:LIMIT|$)/is);
+    if (orderMatch) {
+        parsed['ORDER BY'] = orderMatch[1].split(',').map(s => s.trim());
+    }
+
+    return parsed;
+}
+
+function compareSQLPart(part, left, right, diffs) {
+    const leftPart = left[part] || [];
+    const rightPart = right[part] || [];
+
+    // 找出新增的
+    rightPart.forEach(item => {
+        if (!leftPart.includes(item)) {
+            diffs.push({ type: 'added', part, value: item });
+        }
     });
-    
-    return sql;
+
+    // 找出删除的
+    leftPart.forEach(item => {
+        if (!rightPart.includes(item)) {
+            diffs.push({ type: 'removed', part, value: item });
+        }
+    });
+}
+
+function calculateSimilarity(left, right) {
+    if (left === right) return 100;
+    const maxLen = Math.max(left.length, right.length);
+    if (maxLen === 0) return 100;
+
+    let matches = 0;
+    for (let i = 0; i < Math.min(left.length, right.length); i++) {
+        if (left[i] === right[i]) matches++;
+    }
+    return Math.round((matches / maxLen) * 100);
 }
 
 /**
- * 添加缩进
+ * 格式化 SQL 文本
  */
-function addIndentation(sql, indentSize) {
-    const lines = sql.split('\n');
-    let indentLevel = 0;
-    const indentStr = ' '.repeat(indentSize);
-    
-    const formattedLines = lines.map(line => {
-        const trimmed = line.trim();
-        
-        // 减少缩进级别的关键字
-        if (/^\s*(END|ELSE|ELSIF|WHEN)\b/i.test(trimmed) || 
-            /^\s*\}\s*$/.test(trimmed) ||
-            /^\s*\)\s*(,|;)?\s*$/.test(trimmed)) {
-            indentLevel = Math.max(0, indentLevel - 1);
-        }
-        
-        // 应用缩进
-        const indentedLine = indentStr.repeat(indentLevel) + trimmed;
-        
-        // 增加缩进级别的关键字
-        if (/\b(BEGIN|CASE)\b/i.test(trimmed) || 
-            /\{\s*$/.test(trimmed) ||
-            /\(\s*$/.test(trimmed)) {
-            indentLevel++;
-        }
-        
-        return indentedLine;
-    });
-    
-    return formattedLines.join('\n');
-}
-
-/**
- * 添加智能缩进
- */
-function addSmartIndentation(sql, indentSize) {
-    const lines = sql.split('\n');
-    let indentLevel = 0;
-    const indentStr = ' '.repeat(indentSize);
-    const indentStack = [];
-    
-    const formattedLines = lines.map((line, index) => {
-        const trimmed = line.trim();
-        if (!trimmed) return '';
-        
-        // 处理子查询和复杂表达式
-        let lineIndent = indentLevel;
-        
-        // 检查是否应该减少缩进
-        const decreaseKeywords = [
-            'END', 'ELSE', 'ELSIF', 'WHEN', 'THEN',
-            'UNION', 'UNION ALL', 'INTERSECT', 'EXCEPT'
-        ];
-        
-        for (const keyword of decreaseKeywords) {
-            const regex = new RegExp(`^\\s*${keyword}\\b`, 'i');
-            if (regex.test(trimmed)) {
-                lineIndent = Math.max(0, indentLevel - 1);
-                break;
-            }
-        }
-        
-        // 应用缩进
-        const indentedLine = indentStr.repeat(lineIndent) + trimmed;
-        
-        // 检查是否应该增加缩进
-        const increasePatterns = [
-            /^\s*(SELECT|FROM|WHERE|GROUP BY|ORDER BY|HAVING|LIMIT)/i,
-            /^\s*(INSERT|UPDATE|DELETE)/i,
-            /^\s*(INNER JOIN|LEFT JOIN|RIGHT JOIN|FULL JOIN)/i,
-            /^\s*(CASE|WHEN|THEN|ELSE)/i,
-            /\s*\(\s*$/,
-            /\s*\{\s*$/
-        ];
-        
-        for (const pattern of increasePatterns) {
-            if (pattern.test(trimmed)) {
-                indentLevel++;
-                indentStack.push({ pattern, index });
-                break;
-            }
-        }
-        
-        return indentedLine;
-    });
-    
-    return formattedLines.join('\n');
-}
-
-/**
- * 优化换行
- */
-function optimizeLineBreaks(sql) {
-    // 在常见关键字前添加换行（如果不在同一行）
-    const breakBeforeKeywords = [
-        'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT',
-        'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL JOIN', 'ON',
-        'AND', 'OR'
-    ];
-    
+function formatSQLText(sql) {
     let formatted = sql;
-    
-    breakBeforeKeywords.forEach(keyword => {
-        const regex = new RegExp(`([^\\n])(${keyword}\\b)`, 'gi');
-        formatted = formatted.replace(regex, `$1\n$2`);
+
+    // 标准化空白
+    formatted = formatted.replace(/\t/g, '    ');
+    formatted = formatted.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    formatted = formatted.replace(/[ \t]+$/gm, '');
+
+    // 关键字列表
+    const keywords = [
+        'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT',
+        'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE FROM',
+        'CREATE TABLE', 'ALTER TABLE', 'DROP TABLE',
+        'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL JOIN', 'JOIN',
+        'ON', 'AS', 'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN',
+        'IS NULL', 'IS NOT NULL', 'DISTINCT', 'UNION', 'ALL', 'EXISTS',
+        'CASE', 'WHEN', 'THEN', 'ELSE', 'END',
+        'PRIMARY KEY', 'FOREIGN KEY', 'REFERENCES',
+        'CONSTRAINT', 'UNIQUE', 'CHECK', 'DEFAULT'
+    ];
+
+    // 排序关键字，长的先匹配
+    keywords.sort((a, b) => b.length - a.length);
+
+    keywords.forEach(keyword => {
+        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+        formatted = formatted.replace(regex, keyword);
     });
-    
+
+    // 添加缩进和换行
+    formatted = addSQLIndentation(formatted);
+
+    // 添加分号
+    const trimmed = formatted.trim();
+    if (!trimmed.endsWith(';') && trimmed.length > 0) {
+        formatted = trimmed + ';';
+    }
+
     return formatted;
 }
 
 /**
- * 优化对齐
+ * SQL 缩进
  */
-function optimizeAlignment(sql) {
+function addSQLIndentation(sql) {
     const lines = sql.split('\n');
-    
-    // 查找 SELECT 语句中的列
-    let inSelect = false;
-    let selectStart = -1;
-    
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        
-        if (/^SELECT\b/i.test(line)) {
-            inSelect = true;
-            selectStart = i;
-        }
-        
-        if (inSelect && /^\s*(FROM|WHERE|GROUP BY|ORDER BY|HAVING|LIMIT|UNION|\))\b/i.test(line)) {
-            // 对齐 SELECT 列
-            alignSelectColumns(lines, selectStart, i);
-            inSelect = false;
-        }
-    }
-    
-    return lines.join('\n');
-}
+    let indentLevel = 0;
+    const indentStr = '  ';
 
-/**
- * 对齐 SELECT 列
- */
-function alignSelectColumns(lines, start, end) {
-    // 找到 AS 关键字的位置
-    let maxAsPos = 0;
-    
-    for (let i = start; i < end; i++) {
-        const match = lines[i].match(/\bAS\b/i);
-        if (match) {
-            const asPos = match.index;
-            if (asPos > maxAsPos) {
-                maxAsPos = asPos;
+    const decreaseKeywords = ['END', 'ELSE', 'WHEN', 'THEN'];
+    const increaseKeywords = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'SET', 'VALUES', 'CASE'];
+
+    const formattedLines = lines.map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return '';
+
+        // 检查是否减少缩进
+        for (const kw of decreaseKeywords) {
+            if (trimmed.toUpperCase().startsWith(kw)) {
+                indentLevel = Math.max(0, indentLevel - 1);
+                break;
             }
         }
-    }
-    
-    // 对齐 AS 关键字
-    if (maxAsPos > 0) {
-        for (let i = start; i < end; i++) {
-            const match = lines[i].match(/\bAS\b/i);
-            if (match) {
-                const currentAsPos = match.index;
-                if (currentAsPos < maxAsPos) {
-                    const spacesToAdd = maxAsPos - currentAsPos;
-                    const beforeAs = lines[i].substring(0, currentAsPos);
-                    const afterAs = lines[i].substring(currentAsPos);
-                    lines[i] = beforeAs + ' '.repeat(spacesToAdd) + afterAs;
-                }
+
+        const indentedLine = indentStr.repeat(indentLevel) + trimmed;
+
+        // 检查是否增加缩进
+        for (const kw of increaseKeywords) {
+            if (trimmed.toUpperCase().startsWith(kw)) {
+                indentLevel++;
+                break;
             }
         }
-    }
-}
 
-/**
- * 添加分号
- */
-function addSemicolon(sql) {
-    const trimmed = sql.trim();
-    if (!trimmed.endsWith(';') && trimmed.length > 0) {
-        return trimmed + ';';
-    }
-    return trimmed;
-}
-
-/**
- * 清理多余空行
- */
-function cleanExtraBlankLines(sql) {
-    // 将连续的空行减少为一个空行
-    return sql.replace(/\n\s*\n\s*\n/g, '\n\n');
-}
-
-/**
- * 验证 SQL 语法
- */
-function validateSQLSyntax(sql, dialect) {
-    const errors = [];
-    const warnings = [];
-    
-    // 基本检查
-    const lines = sql.split('\n');
-    
-    // 检查未闭合的引号
-    let inSingleQuote = false;
-    let inDoubleQuote = false;
-    let inComment = false;
-    
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        
-        for (let j = 0; j < line.length; j++) {
-            const char = line[j];
-            const prevChar = j > 0 ? line[j - 1] : '';
-            
-            // 处理转义字符
-            if (prevChar === '\\') {
-                continue;
-            }
-            
-            // 处理注释
-            if (!inSingleQuote && !inDoubleQuote) {
-                if (char === '-' && j < line.length - 1 && line[j + 1] === '-') {
-                    inComment = true;
-                    break; // 行注释，跳过该行剩余部分
-                }
-                if (char === '/' && j < line.length - 1 && line[j + 1] === '*') {
-                    inComment = true;
-                    j++; // 跳过下一个字符
-                    continue;
-                }
-                if (char === '*' && j < line.length - 1 && line[j + 1] === '/') {
-                    inComment = false;
-                    j++; // 跳过下一个字符
-                    continue;
-                }
-            }
-            
-            if (!inComment) {
-                if (char === "'" && !inDoubleQuote) {
-                    inSingleQuote = !inSingleQuote;
-                } else if (char === '"' && !inSingleQuote) {
-                    inDoubleQuote = !inDoubleQuote;
-                }
-            }
-        }
-        
-        // 检查是否还有未闭合的引号
-        if (inComment) {
-            inComment = false; // 重置，下一行可能继续
-        }
-    }
-    
-    if (inSingleQuote) {
-        errors.push('未闭合的单引号');
-    }
-    if (inDoubleQuote) {
-        errors.push('未闭合的双引号');
-    }
-    
-    // 检查方言特定的问题
-    if (dialect === 'mysql') {
-        // MySQL 特定检查
-        if (sql.includes('LIMIT') && !sql.match(/LIMIT\s+(\d+)(?:\s*,\s*(\d+))?\s*(?:;|$)/i)) {
-            warnings.push('LIMIT 子句语法可能不正确');
-        }
-    }
-    
-    // 检查常见错误
-    if (sql.match(/\bWHERE\b.*\bWHERE\b/i)) {
-        errors.push('多个 WHERE 子句');
-    }
-    
-    if (sql.match(/\bGROUP BY\b.*\bGROUP BY\b/i)) {
-        errors.push('多个 GROUP BY 子句');
-    }
-    
-    if (sql.match(/\bORDER BY\b.*\bORDER BY\b/i)) {
-        errors.push('多个 ORDER BY 子句');
-    }
-    
-    // 如果有错误，抛出异常
-    if (errors.length > 0) {
-        throw new Error(`SQL 语法错误: ${errors.join('; ')}`);
-    }
-    
-    // 如果有警告，记录但不抛出异常
-    if (warnings.length > 0) {
-        console.warn('SQL 警告:', warnings);
-        updateStatus('sql-status', `⚠ ${warnings.length} 个警告`, 'warning');
-    }
-}
-
-/**
- * 处理 SQL 错误
- */
-function handleSQLError(error, text, codeElement, dialect) {
-    console.error('SQL 错误:', error);
-    
-    // 提取错误信息
-    let errorMessage = 'SQL 格式化错误';
-    
-    if (error instanceof Error) {
-        errorMessage = error.message;
-    }
-    
-    // 更新输出显示错误信息
-    const errorHtml = `-- SQL 格式化错误
--- ${errorMessage}
--- 方言: ${dialect.toUpperCase()}
-
-${text}`;
-    
-    codeElement.textContent = errorHtml;
-    codeElement.className = 'language-sql';
-    
-    // 高亮错误行
-    highlightSQLErrorLine(codeElement);
-    
-    // 更新状态
-    updateStatus('sql-output-status', '✗ 格式化失败', 'error');
-    updateStatus('sql-status', '✗ SQL 语法错误', 'error');
-    
-    // 显示错误消息
-    showToast(errorMessage.split('\n')[0], 'error');
-}
-
-/**
- * 应用 SQL 语法高亮
- */
-function applySQLSyntaxHighlighting(codeElement, dialect) {
-    const text = codeElement.textContent;
-    let highlighted = text;
-    
-    // 高亮关键字
-    let allKeywords = [...SQL_KEYWORDS.common];
-    if (SQL_KEYWORDS[dialect]) {
-        allKeywords = [...allKeywords, ...SQL_KEYWORDS[dialect]];
-    }
-    
-    // 排序关键字，长的先匹配
-    allKeywords.sort((a, b) => b.length - a.length);
-    
-    allKeywords.forEach(keyword => {
-        const regex = new RegExp(`\\b(${keyword.replace(/\s+/g, '\\s+')})\\b`, 'gi');
-        highlighted = highlighted.replace(regex, `<span class="keyword">$1</span>`);
+        return indentedLine;
     });
-    
-    // 高亮函数
-    SQL_FUNCTIONS.forEach(func => {
-        const regex = new RegExp(`\\b(${func})\\s*\\(`, 'gi');
-        highlighted = highlighted.replace(regex, `<span class="function">$1</span>(`);
-    });
-    
-    // 高亮字符串
-    highlighted = highlighted.replace(/'([^'\\]*(\\.[^'\\]*)*)'/g, `<span class="string">'$1'</span>`);
-    highlighted = highlighted.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, `<span class="string">"$1"</span>`);
-    
-    // 高亮数字
-    highlighted = highlighted.replace(/\b\d+(\.\d+)?\b/g, `<span class="number">$&</span>`);
-    
-    // 高亮注释
-    highlighted = highlighted.replace(/--[^\n]*/g, `<span class="comment">$&</span>`);
-    highlighted = highlighted.replace(/\/\*[\s\S]*?\*\//g, `<span class="comment">$&</span>`);
-    
-    // 高亮运算符
-    SQL_OPERATORS.forEach(op => {
-        const regex = new RegExp(`(\\s|^)(${escapeRegExp(op)})(\\s|$)`, 'g');
-        highlighted = highlighted.replace(regex, `$1<span class="operator">$2</span>$3`);
-    });
-    
-    codeElement.innerHTML = highlighted;
+
+    return formattedLines.join('\n');
 }
 
 /**
- * 高亮 SQL 错误行
+ * 显示 SQL 差异汇总
  */
-function highlightSQLErrorLine(codeElement) {
-    const lines = codeElement.innerHTML.split('\n');
-    const highlightedLines = lines.map((line, index) => {
-        if (line.includes('-- SQL 格式化错误') || line.includes('-- 错误')) {
-            return `<span class="error-line">${line}</span>`;
+function showSQLDiffSummary(diffs) {
+    const panel = document.getElementById('sql-summary');
+    const equalCard = document.getElementById('sql-equal-card');
+    const errorCard = document.getElementById('sql-error-card');
+    const detail = document.getElementById('sql-detail');
+
+    if (!panel) return;
+
+    errorCard.style.display = 'none';
+
+    // 计算统计
+    const similarity = diffs.find(d => d.type === 'similarity');
+    const added = diffs.filter(d => d.type === 'added');
+    const removed = diffs.filter(d => d.type === 'removed');
+
+    if (diffs.length <= 1 && similarity && similarity.value === 100) {
+        // 完全相同
+        equalCard.innerHTML = '<i class="fas fa-check-circle"></i><span>两SQL完全相同</span>';
+        equalCard.style.display = 'flex';
+        detail.innerHTML = '';
+    } else {
+        // 显示相似度和差异
+        equalCard.innerHTML = `<i class="fas fa-percentage"></i><span>相似度 <b>${similarity ? similarity.value : 0}%</b></span>`;
+        equalCard.style.display = 'flex';
+
+        let html = '<div class="diff-cards">';
+        if (added.length > 0) {
+            html += `<div class="diff-card diff-added-card"><i class="fas fa-plus-circle"></i><span>新增 <b>${added.length}</b> 项</span></div>`;
         }
-        return line;
-    });
-    
-    codeElement.innerHTML = highlightedLines.join('\n');
+        if (removed.length > 0) {
+            html += `<div class="diff-card diff-removed-card"><i class="fas fa-minus-circle"></i><span>删除 <b>${removed.length}</b> 项</span></div>`;
+        }
+        html += '</div>';
+
+        if (added.length > 0 || removed.length > 0) {
+            html += '<div class="diff-detail">';
+            [...added, ...removed].forEach(diff => {
+                const icon = diff.type === 'added' ? 'fa-plus-circle' : 'fa-minus-circle';
+                const partName = diff.part || '其他';
+                html += `<div class="diff-item-card ${diff.type}">
+                    <i class="fas ${icon} diff-icon"></i>
+                    <div class="diff-content">
+                        <div class="diff-path">${partName}</div>
+                        <div class="diff-values">${diff.type === 'added' ? `<span class="new">+ ${diff.value}</span>` : `<span class="old">- ${diff.value}</span>`}</div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        detail.innerHTML = html;
+    }
+
+    panel.style.display = 'block';
 }
 
-/**
- * 更新 SQL 输出字符计数
- */
-function updateSQLOutputCharCount() {
-    const sqlOutput = document.getElementById('sql-output');
-    const sqlCounter = document.getElementById('sql-output-count');
-    
-    if (sqlOutput && sqlCounter) {
-        const code = sqlOutput.querySelector('code');
-        if (code) {
-            const text = code.textContent || code.innerText;
-            const count = text.length;
-            sqlCounter.textContent = `${count} 字符`;
-        }
+function showSQLError(message, details) {
+    const panel = document.getElementById('sql-summary');
+    const equalCard = document.getElementById('sql-equal-card');
+    const errorCard = document.getElementById('sql-error-card');
+    const detail = document.getElementById('sql-detail');
+
+    if (!panel) return;
+
+    equalCard.style.display = 'none';
+    errorCard.style.display = 'flex';
+
+    detail.innerHTML = `<div class="diff-error-card">
+        <i class="fas fa-exclamation-triangle diff-error-icon"></i>
+        <div class="diff-error-content">
+            <div class="diff-error-title">${message}</div>
+            ${details ? `<div class="diff-error-details">${details}</div>` : ''}
+        </div>
+    </div>`;
+
+    panel.style.display = 'block';
+}
+
+function clearSQLSummary() {
+    const panel = document.getElementById('sql-summary');
+    if (panel) panel.style.display = 'none';
+}
+
+function loadSQLExample(side) {
+    const examples = {
+        left: `SELECT id, name, email FROM users WHERE status = 'active' ORDER BY created_at DESC LIMIT 10`,
+        right: `SELECT id, name, email, created_at FROM users WHERE status = 'active' AND age > 18`
+    };
+    const input = document.getElementById(`sql-input-${side}`);
+    if (input) {
+        input.value = examples[side];
+        input.dispatchEvent(new Event('input'));
+        clearSQLSummary();
     }
 }
 
-/**
- * 转义正则表达式特殊字符
- */
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function clearSQLInput(side) {
+    const input = document.getElementById(`sql-input-${side}`);
+    if (input) {
+        input.value = '';
+        input.dispatchEvent(new Event('input'));
+    }
+    clearSQLSummary();
 }
 
-/**
- * 更新状态指示器（从主文件导入）
- */
+async function pasteSQLInput(side) {
+    const input = document.getElementById(`sql-input-${side}`);
+    if (!input) return;
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text.trim()) {
+            input.value = text;
+            input.dispatchEvent(new Event('input'));
+        }
+    } catch (e) {}
+}
+
 function updateStatus(elementId, message, type = 'info') {
     const element = document.getElementById(elementId);
     if (element) {
         element.textContent = message;
-        element.className = 'status';
-        element.classList.add(type);
+        element.className = `status ${type}`;
     }
 }
 
-/**
- * 显示 Toast 消息（从主文件导入）
- */
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     if (!toast) return;
-    
     toast.textContent = message;
-    toast.className = 'toast';
-    toast.classList.add(type);
-    toast.classList.add('show');
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    toast.className = `toast ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-/**
- * SQL 格式化工具初始化
- */
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('SQL 格式化工具已加载');
-    
-    // 添加键盘快捷键说明
-    const sqlInput = document.getElementById('sql-input');
-    if (sqlInput) {
-        sqlInput.title = '快捷键：Ctrl+Enter 格式化，Ctrl+S 下载';
-    }
-    
-    // 初始化示例数据（覆盖主文件中的版本）
-    const sqlExampleBtn = document.getElementById('sql-example');
-    if (sqlExampleBtn && !sqlExampleBtn.hasEventListener) {
-        sqlExampleBtn.hasEventListener = true;
-        sqlExampleBtn.addEventListener('click', function() {
-            const example = `-- 示例 SQL 查询
-SELECT 
-    u.user_id,
-    u.username,
-    u.email,
-    COUNT(o.order_id) AS order_count,
-    SUM(o.amount) AS total_amount
-FROM users u
-LEFT JOIN orders o ON u.user_id = o.user_id
-WHERE u.status = 'active'
-    AND u.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-GROUP BY u.user_id, u.username, u.email
-HAVING COUNT(o.order_id) > 0
-ORDER BY total_amount DESC
-LIMIT 10;`;
-            
-            const input = document.getElementById('sql-input');
-            if (input) {
-                input.value = example;
-                input.dispatchEvent(new Event('input'));
-                showToast('SQL 示例已加载', 'success');
-            }
-        });
-    }
-    
-    // 添加 SQL 格式化选项
-    const extraOptions = `
-        <div class="option">
-            <label>
-                <input type="checkbox" id="sql-align-equals">
-                对齐赋值符号
-            </label>
-        </div>
-        <div class="option">
-            <label>
-                <input type="checkbox" id="sql-space-around-operators">
-                操作符周围添加空格
-            </label>
-        </div>
-    `;
-    
-    const optionsGrid = document.querySelector('#sql-tool .options-grid');
-    if (optionsGrid) {
-        optionsGrid.insertAdjacentHTML('beforeend', extraOptions);
-        
-        // 对齐赋值符号选项
-        const alignEqualsCheckbox = document.getElementById('sql-align-equals');
-        if (alignEqualsCheckbox) {
-            alignEqualsCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    showToast('赋值符号对齐已启用', 'info');
-                } else {
-                    showToast('赋值符号对齐已禁用', 'info');
-                }
-            });
-        }
-        
-        // 操作符空格选项
-        const spaceAroundOperatorsCheckbox = document.getElementById('sql-space-around-operators');
-        if (spaceAroundOperatorsCheckbox) {
-            spaceAroundOperatorsCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    showToast('操作符周围空格已启用', 'info');
-                } else {
-                    showToast('操作符周围空格已禁用', 'info');
-                }
-            });
-        }
-    }
-});
-
-// 导出函数
-window.validateSQLSyntax = validateSQLSyntax;
+function updateCharCount(inputId, counterId) {
+    const input = document.getElementById(inputId);
+    const counter = document.getElementById(counterId);
+    if (input && counter) counter.textContent = `${input.value.length} 字符`;
+}
