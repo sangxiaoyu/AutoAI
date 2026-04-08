@@ -130,6 +130,26 @@ async function getMyIP() {
     }
 }
 
+// 格式化时区显示
+function formatTimezone(tz) {
+    if (!tz) return '-';
+    
+    const tzMap = {
+        'Asia/Shanghai': 'Beijing Time (UTC+8)',
+        'Asia/Hong_Kong': 'Hong Kong Time (UTC+8)',
+        'Asia/Taipei': 'Taipei Time (UTC+8)',
+        'Asia/Tokyo': 'Tokyo Time (UTC+9)',
+        'Asia/Seoul': 'Seoul Time (UTC+9)',
+        'Asia/Singapore': 'Singapore Time (UTC+8)',
+        'America/New_York': 'New York (UTC-5)',
+        'America/Los_Angeles': 'Los Angeles (UTC-8)',
+        'Europe/London': 'London (UTC+0)',
+        'Europe/Paris': 'Paris (UTC+1)'
+    };
+    
+    return tzMap[tz] || tz;
+}
+
 // 统一不同 API 的返回格式
 function normalizeApiResponse(data, apiIndex) {
     // ipapi.co 格式
@@ -191,7 +211,7 @@ function showResult(data, ip) {
     document.getElementById('org').textContent = ip.includes(':') ? 'IPv6' : 'IPv4';
     document.getElementById('region').textContent = data.region || '-';
     document.getElementById('city').textContent = data.city || '-';
-    document.getElementById('timezone').textContent = data.timezone || '-';
+    document.getElementById('timezone').textContent = formatTimezone(data.timezone);
 
     // 更新状态
     const status = document.getElementById('result-status');
