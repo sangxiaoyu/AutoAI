@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP 地址查询 - IP Lookup</title>
+    <meta name="description" content="在线查询IP地址的详细信息，包括归属地、运营商、地理位置等">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://webapi.amap.com/maps?v=2.0&key=0cebf0811f85cb414a1a3eeec95b4b2e&securityConfig={"securityJsCode":"6f5d9ea115459b3341a50547e62e6f2d"}"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-globe"></i>
+                <h1>IP 地址查询</h1>
+            </div>
+            <p class="subtitle">快速查询 IP 地址的详细信息 · 纯前端处理，保护隐私</p>
+        </header>
+
+        <main class="main-content">
+            <div class="search-section">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="ip-input" placeholder="请输入 IP 地址（留空查询本机 IP）" autocomplete="off">
+                    <button class="btn btn-primary" id="search-btn">
+                        <i class="fas fa-search"></i>
+                        <span>查询</span>
+                    </button>
+                </div>
+                <div class="quick-actions">
+                    <button class="quick-btn" id="my-ip-btn">
+                        <i class="fas fa-laptop"></i>
+                        查询本机 IP
+                    </button>
+                    <button class="quick-btn" id="history-btn">
+                        <i class="fas fa-history"></i>
+                        查询记录
+                    </button>
+                </div>
+            </div>
+
+            <div class="loading-section" id="loading" style="display: none;">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <span>正在查询中...</span>
+                </div>
+            </div>
+
+            <div class="result-section" id="result-section" style="display: none;">
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-ip">
+                            <i class="fas fa-network-wired"></i>
+                            <span id="display-ip">-</span>
+                        </div>
+                        <div class="result-status success" id="result-status">
+                            <i class="fas fa-check-circle"></i>
+                            <span>查询成功</span>
+                        </div>
+                    </div>
+                    
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <div class="item-icon"><i class="fas fa-map-marker-alt"></i></div>
+                            <div class="item-content">
+                                <label>归属地</label>
+                                <span id="country">-</span>
+                            </div>
+                        </div>
+                        <div class="result-item">
+                            <div class="item-icon"><i class="fas fa-building"></i></div>
+                            <div class="item-content">
+                                <label>运营商</label>
+                                <span id="isp">-</span>
+                            </div>
+                        </div>
+                        <div class="result-item">
+                            <div class="item-icon"><i class="fas fa-server"></i></div>
+                            <div class="item-content">
+                                <label>网络类型</label>
+                                <span id="org">-</span>
+                            </div>
+                        </div>
+                        <div class="result-item">
+                            <div class="item-icon"><i class="fas fa-flag"></i></div>
+                            <div class="item-content">
+                                <label>国家/地区</label>
+                                <span id="region">-</span>
+                            </div>
+                        </div>
+                        <div class="result-item">
+                            <div class="item-icon"><i class="fas fa-city"></i></div>
+                            <div class="item-content">
+                                <label>城市</label>
+                                <span id="city">-</span>
+                            </div>
+                        </div>
+                        <div class="result-item">
+                            <div class="item-icon"><i class="fas fa-clock"></i></div>
+                            <div class="item-content">
+                                <label>时区</label>
+                                <span id="timezone">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="map-section" id="map-container">
+                        <div class="map-placeholder" id="map-placeholder">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <span>地理位置</span>
+                        </div>
+                        <div id="map-content" style="display: none;">
+                            <div class="map-coords" id="map-coords"></div>
+                            <div id="amap-container" style="width:100%;height:250px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="result-actions">
+                        <button class="btn btn-secondary" id="copy-result">
+                            <i class="fas fa-copy"></i> 复制结果
+                        </button>
+                        <button class="btn btn-outline" id="new-search">
+                            <i class="fas fa-redo"></i> 新查询
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="error-section" id="error-section" style="display: none;">
+                <div class="error-card">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>查询失败</h3>
+                    <p id="error-message">请检查输入的 IP 地址格式是否正确</p>
+                    <button class="btn btn-primary" id="retry-btn">
+                        <i class="fas fa-redo"></i> 重新查询
+                    </button>
+                </div>
+            </div>
+
+            <!-- 查询记录弹窗 -->
+            <div class="modal-overlay" id="history-modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-history"></i> 查询记录</h3>
+                        <button class="modal-close" id="close-history">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="history-list"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" id="clear-history">
+                            <i class="fas fa-trash"></i> 清空记录
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p><i class="fas fa-shield-alt"></i> 纯前端处理 · 数据不上传服务器 · 保护用户隐私</p>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="js/ip-lookup.js"></script>
+</body>
+</html>
