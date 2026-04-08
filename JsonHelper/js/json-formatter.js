@@ -72,7 +72,7 @@ function bindEvents() {
     // 左侧按钮
     document.getElementById('json-example-left')?.addEventListener('click', () => loadExample('left'));
     document.getElementById('json-clear-left')?.addEventListener('click', () => clearInput('left'));
-    document.getElementById('json-paste-left')?.addEventListener('click', () => pasteInput('left'));
+    document.getElementById('json-paste-left')?.addEventListener('click', () => copyInput('left'));
 
     // 右侧按钮
     document.getElementById('json-example-right')?.addEventListener('click', () => loadExample('right'));

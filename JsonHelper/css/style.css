@@ -13,7 +13,7 @@ html {
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(180deg, #f5f7fa 0%, #e4e8ec 100%);
     min-height: 100vh;
     color: #333;
     line-height: 1.6;
@@ -193,149 +193,181 @@ body {
 
 /* 差异汇总面板 */
 .diff-summary-panel {
-    background: #fff;
-    border-radius: 12px;
-    padding: 20px;
+    background: linear-gradient(180deg, #f8f9fc 0%, #fff 100%);
+    border-radius: 16px;
+    padding: 24px;
     margin-top: 20px;
-    border: 1px solid #e9ecef;
+    border: 1px solid #e8ecf1;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .diff-cards {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
 }
 
 .diff-card {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
-    padding: 14px 22px;
-    border-radius: 12px;
+    padding: 16px 18px;
+    border-radius: 14px;
     font-weight: 600;
-    transition: all 0.25s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    font-size: 0.95rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    cursor: default;
 }
 
 .diff-card i {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
 }
 
 .diff-equal-card {
-    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-    color: #155724;
-    flex: 1;
+    background: linear-gradient(135deg, #d4edda 0%, #b8dac8 100%);
+    color: #1e7e34;
 }
 
 .diff-equal-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(21, 87, 36, 0.25);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(30, 126, 52, 0.25);
 }
 
 .diff-added-card {
-    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-    color: #0c5460;
-    flex: 1;
+    background: linear-gradient(135deg, #cce5ff 0%, #a8d4ff 100%);
+    color: #0c6ebd;
 }
 
 .diff-added-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(12, 84, 96, 0.25);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(12, 110, 189, 0.25);
 }
 
 .diff-removed-card {
-    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-    color: #721c24;
-    flex: 1;
+    background: linear-gradient(135deg, #f8d7da 0%, #f0b8be 100%);
+    color: #c82333;
 }
 
 .diff-removed-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(114, 28, 36, 0.25);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(200, 35, 51, 0.25);
 }
 
 .diff-modified-card {
     background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-    color: #856404;
-    flex: 1;
+    color: #d4a200;
 }
 
 .diff-modified-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(133, 100, 4, 0.25);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(212, 162, 0, 0.25);
 }
 
 .diff-detail {
-    max-height: 300px;
+    max-height: 350px;
     overflow-y: auto;
+    padding-right: 8px;
+}
+
+.diff-detail::-webkit-scrollbar {
+    width: 6px;
+}
+
+.diff-detail::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 3px;
+}
+
+.diff-detail::-webkit-scrollbar-thumb {
+    background: #c1c8d0;
+    border-radius: 3px;
+}
+
+.diff-detail::-webkit-scrollbar-thumb:hover {
+    background: #a0a8b0;
 }
 
 .diff-item-card {
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    padding: 14px 16px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    font-family: 'Consolas', monospace;
+    padding: 16px 18px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    font-family: 'Consolas', 'Monaco', monospace;
     font-size: 13px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .diff-item-card:hover {
-    transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateX(6px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .diff-item-card.added {
-    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-    border-left: 5px solid #17a2b8;
+    background: linear-gradient(135deg, #e7f5ff 0%, #d0ebff 100%);
+    border-left: 4px solid #339af0;
 }
 
 .diff-item-card.removed {
-    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-    border-left: 5px solid #dc3545;
+    background: linear-gradient(135deg, #ffe8e8 0%, #ffc9c9 100%);
+    border-left: 4px solid #fa5252;
 }
 
 .diff-item-card.modified {
-    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-    border-left: 5px solid #ffc107;
+    background: linear-gradient(135deg, #fff9db 0%, #fff3bf 100%);
+    border-left: 4px solid #fab005;
 }
 
 .diff-item-card .diff-icon {
-    font-size: 1.1rem;
-    margin-top: 2px;
+    font-size: 1.2rem;
+    margin-top: 3px;
+    min-width: 24px;
 }
 
 .diff-item-card .diff-content {
     flex: 1;
+    min-width: 0;
 }
 
 .diff-item-card .diff-path {
     font-weight: 700;
-    color: #333;
-    margin-bottom: 6px;
+    color: #2c3e50;
+    margin-bottom: 8px;
     font-size: 0.9rem;
+    word-break: break-all;
 }
 
 .diff-item-card .diff-values {
-    color: #555;
+    color: #495057;
     font-size: 12px;
-    background: rgba(255, 255, 255, 0.6);
-    padding: 6px 10px;
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 8px 12px;
+    border-radius: 6px;
+    word-break: break-all;
+    line-height: 1.6;
 }
 
 .diff-item-card .diff-values .old {
-    color: #dc3545;
+    color: #e03131;
     text-decoration: line-through;
     font-weight: 500;
+    background: rgba(255, 180, 180, 0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 8px;
 }
 
 .diff-item-card .diff-values .new {
-    color: #00b894;
+    color: #099268;
     font-weight: 600;
+    background: rgba(180, 255, 200, 0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
 }
 
 /* 错误提示卡片 */
@@ -380,15 +412,26 @@ body {
 
 /* SQL 错误卡片 */
 .diff-error-card-sql {
-    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-    color: #721c24;
-    flex: 1;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.2);
+    background: linear-gradient(135deg, #ffe8e8 0%, #ffc9c9 100%);
+    color: #c92a2a;
+    box-shadow: 0 4px 15px rgba(201, 42, 42, 0.2);
 }
 
 .diff-error-card-sql:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(201, 42, 42, 0.25);
+}
+
+/* JSON 错误卡片（与 diff-cards 同级） */
+.diff-card.diff-error-card {
+    background: linear-gradient(135deg, #ffe8e8 0%, #ffc9c9 100%);
+    color: #c92a2a;
+    box-shadow: 0 4px 15px rgba(201, 42, 42, 0.2);
+}
+
+.diff-card.diff-error-card:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(201, 42, 42, 0.25);
 }
 
 /* 工具容器 */
@@ -1060,11 +1103,13 @@ body {
     }
 
     .diff-cards {
-        flex-wrap: wrap;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .diff-card {
-        flex: 1 1 45%;
+        justify-content: flex-start;
+        padding: 14px 16px;
+        font-size: 0.9rem;
     }
 }
 
@@ -1102,6 +1147,34 @@ body {
     
     .feature {
         padding: 20px;
+    }
+
+    .diff-summary-panel {
+        padding: 16px;
+    }
+
+    .diff-cards {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .diff-card {
+        justify-content: center;
+        padding: 12px 14px;
+    }
+
+    .diff-item-card {
+        padding: 12px 14px;
+        font-size: 12px;
+    }
+
+    .diff-item-card .diff-path {
+        font-size: 0.85rem;
+    }
+
+    .diff-item-card .diff-values {
+        font-size: 11px;
+        padding: 6px 10px;
     }
 }
 

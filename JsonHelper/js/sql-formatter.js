@@ -34,11 +34,12 @@ function initSQLCharCounters() {
 function bindSQLEvents() {
     // 主按钮
     document.getElementById('sql-format')?.addEventListener('click', formatSQL);
+    document.getElementById('sql-minify')?.addEventListener('click', minifySQL);
 
     // 左侧按钮
     document.getElementById('sql-example-left')?.addEventListener('click', () => loadSQLExample('left'));
     document.getElementById('sql-clear-left')?.addEventListener('click', () => clearSQLInput('left'));
-    document.getElementById('sql-paste-left')?.addEventListener('click', () => pasteSQLInput('left'));
+    document.getElementById('sql-paste-left')?.addEventListener('click', () => copySQLInput('left'));
 
     // 右侧按钮
     document.getElementById('sql-example-right')?.addEventListener('click', () => loadSQLExample('right'));
@@ -443,3 +444,25 @@ function updateCharCount(inputId, counterId) {
     const counter = document.getElementById(counterId);
     if (input && counter) counter.textContent = `${input.value.length} 字符`;
 }
+
+/**
+ * 压缩 SQL（去除多余空白，合并为单行）
+ */
+window.minifySQL = function() {
+    const leftInput = document.getElementById('sql-input-left');
+    const rightInput = document.getElementById('sql-input-right');
+
+    if (leftInput?.value.trim()) {
+        leftInput.value = leftInput.value.replace(/\s+/g, ' ').trim();
+        updateStatus('sql-left-status', '✓ 已压缩', 'success');
+    }
+
+    if (rightInput?.value.trim()) {
+        rightInput.value = rightInput.value.replace(/\s+/g, ' ').trim();
+        updateStatus('sql-right-status', '✓ 已压缩', 'success');
+    }
+
+    clearSQLSummary();
+    updateCharCount('sql-input-left', 'sql-left-count');
+    updateCharCount('sql-input-right', 'sql-right-count');
+};

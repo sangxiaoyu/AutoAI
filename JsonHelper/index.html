@@ -89,17 +89,21 @@
                                 <i class="fas fa-check-circle"></i>
                                 <span>完全相同</span>
                             </div>
-                            <div class="diff-card diff-added-card" id="diff-added-card">
+                            <div class="diff-card diff-added-card" id="diff-added-card" style="display: none;">
                                 <i class="fas fa-plus-circle"></i>
                                 <span>新增 <b id="diff-added-count">0</b> 项</span>
                             </div>
-                            <div class="diff-card diff-removed-card" id="diff-removed-card">
+                            <div class="diff-card diff-removed-card" id="diff-removed-card" style="display: none;">
                                 <i class="fas fa-minus-circle"></i>
                                 <span>删除 <b id="diff-removed-count">0</b> 项</span>
                             </div>
-                            <div class="diff-card diff-modified-card" id="diff-modified-card">
+                            <div class="diff-card diff-modified-card" id="diff-modified-card" style="display: none;">
                                 <i class="fas fa-pen-circle"></i>
                                 <span>修改 <b id="diff-modified-count">0</b> 项</span>
+                            </div>
+                            <div class="diff-card diff-error-card" id="diff-error-card" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>语法错误</span>
                             </div>
                         </div>
                         <div class="diff-detail" id="diff-detail"></div>
@@ -149,6 +153,7 @@
                     <div class="controls-section">
                         <div class="action-buttons">
                             <button class="btn btn-primary" id="sql-format" title="格式化SQL并对比差异"><i class="fas fa-magic"></i> 格式化 & 对比</button>
+                            <button class="btn btn-success" id="sql-minify" title="压缩SQL为单行格式"><i class="fas fa-compress"></i> 压缩</button>
                         </div>
                     </div>
 
