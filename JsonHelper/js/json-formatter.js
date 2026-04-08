@@ -77,7 +77,7 @@ function bindEvents() {
     // 右侧按钮
     document.getElementById('json-example-right')?.addEventListener('click', () => loadExample('right'));
     document.getElementById('json-clear-right')?.addEventListener('click', () => clearInput('right'));
-    document.getElementById('json-paste-right')?.addEventListener('click', () => pasteInput('right'));
+    document.getElementById('json-paste-right')?.addEventListener('click', () => copyInput('right'));
 }
 
 /**
@@ -448,13 +448,18 @@ function clearInput(side) {
     clearDiffSummary();
 }
 
-async function pasteInput(side) {
+async function copyInput(side) {
     const input = document.getElementById(`json-input-${side}`);
-    if (!input) return;
+    if (!input || !input.value) {
+        showToast('没有内容可复制', 'warning');
+        return;
+    }
     try {
-        const text = await navigator.clipboard.readText();
-        if (text.trim()) { input.value = text; input.dispatchEvent(new Event('input')); }
-    } catch (e) {}
+        await navigator.clipboard.writeText(input.value);
+        showToast('已复制到剪贴板', 'success');
+    } catch (e) {
+        showToast('复制失败，请检查权限', 'error');
+    }
 }
 
 function updateCharCount(inputId, counterId) {

@@ -43,7 +43,7 @@ function bindSQLEvents() {
     // 右侧按钮
     document.getElementById('sql-example-right')?.addEventListener('click', () => loadSQLExample('right'));
     document.getElementById('sql-clear-right')?.addEventListener('click', () => clearSQLInput('right'));
-    document.getElementById('sql-paste-right')?.addEventListener('click', () => pasteSQLInput('right'));
+    document.getElementById('sql-paste-right')?.addEventListener('click', () => copySQLInput('right'));
 }
 
 function initSQLStatus() {
@@ -408,16 +408,18 @@ function clearSQLInput(side) {
     clearSQLSummary();
 }
 
-async function pasteSQLInput(side) {
+async function copySQLInput(side) {
     const input = document.getElementById(`sql-input-${side}`);
-    if (!input) return;
+    if (!input || !input.value) {
+        showToast('没有内容可复制', 'warning');
+        return;
+    }
     try {
-        const text = await navigator.clipboard.readText();
-        if (text.trim()) {
-            input.value = text;
-            input.dispatchEvent(new Event('input'));
-        }
-    } catch (e) {}
+        await navigator.clipboard.writeText(input.value);
+        showToast('已复制到剪贴板', 'success');
+    } catch (e) {
+        showToast('复制失败，请检查权限', 'error');
+    }
 }
 
 function updateStatus(elementId, message, type = 'info') {
