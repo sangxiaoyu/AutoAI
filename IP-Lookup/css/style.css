@@ -696,13 +696,67 @@ body {
 .footer {
     text-align: center;
     padding: 25px;
-    background: #f8fafc;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     border-top: 1px solid #e2e8f0;
+}
+
+.footer-privacy {
+    margin-bottom: 12px;
+}
+
+.footer-privacy p {
+    margin: 0;
     color: #64748b;
+    font-size: 0.85rem;
+}
+
+.footer-privacy i { margin-right: 6px; }
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
     font-size: 0.9rem;
 }
 
-.footer i { margin-right: 6px; }
+.footer-link {
+    color: #1e293b;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s;
+}
+
+.footer-link:hover {
+    color: #667eea;
+}
+
+.footer-link i {
+    font-size: 1.1rem;
+}
+
+.footer-divider {
+    color: #cbd5e1;
+}
+
+.footer-author {
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.author-name {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.author-name:hover {
+    text-decoration: underline;
+}
 
 /* ===== 响应式 ===== */
 @media (max-width: 768px) {
