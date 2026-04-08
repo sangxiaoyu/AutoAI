@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编码转换工具 - Base64/URL/HTML</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-shield-halved"></i>
+                <h1>编码转换工具</h1>
+            </div>
+            <p class="subtitle">在线 Base64 / URL / HTML 编码解码，支持批量处理</p>
+        </header>
+
+        <main class="main-content">
+            <!-- 工具选择器 -->
+            <div class="tool-selector">
+                <div class="tool-tabs">
+                    <button class="tool-tab active" data-tool="base64">
+                        <i class="fas fa-lock"></i>
+                        Base64
+                    </button>
+                    <button class="tool-tab" data-tool="url">
+                        <i class="fas fa-link"></i>
+                        URL 编码
+                    </button>
+                    <button class="tool-tab" data-tool="html">
+                        <i class="fas fa-code"></i>
+                        HTML 实体
+                    </button>
+                </div>
+            </div>
+
+            <div class="tool-container">
+                <!-- Base64 工具 -->
+                <div class="tool-section active" id="base64-tool">
+                    <div class="editor-layout">
+                        <div class="editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-pen"></i> 原文</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-secondary btn-sm" id="base64-example" title="加载示例">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="base64-clear" title="清空">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="base64-paste" title="粘贴">
+                                        <i class="fas fa-paste"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="base64-input" placeholder="请输入要编码或解码的内容..."></textarea>
+                            </div>
+                            <div class="editor-footer">
+                                <span class="char-count" id="base64-input-count">0 字符</span>
+                            </div>
+                        </div>
+
+                        <div class="editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-lock"></i> 转换结果</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-info btn-sm" id="base64-copy" title="复制结果">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="btn btn-info btn-sm" id="base64-swap" title="交换内容">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="base64-output" placeholder="转换结果将显示在此处..." readonly></textarea>
+                            </div>
+                            <div class="editor-footer">
+                                <span class="char-count" id="base64-output-count">0 字符</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="controls-section">
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="base64-encode">
+                                <i class="fas fa-arrow-right"></i> 编码
+                            </button>
+                            <button class="btn btn-warning" id="base64-decode">
+                                <i class="fas fa-arrow-left"></i> 解码
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 状态提示 -->
+                    <div class="status-panel" id="base64-status" style="display: none;">
+                        <div class="status-card" id="base64-status-card">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="base64-status-text">转换成功</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- URL 编码工具 -->
+                <div class="tool-section" id="url-tool">
+                    <div class="editor-layout">
+                        <div class="editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-pen"></i> 原文</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-secondary btn-sm" id="url-example" title="加载示例">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="url-clear" title="清空">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="url-paste" title="粘贴">
+                                        <i class="fas fa-paste"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="url-input" placeholder="请输入要编码或解码的 URL..."></textarea>
+                            </div>
+                            <div class="editor-footer">
+                                <span class="char-count" id="url-input-count">0 字符</span>
+                            </div>
+                        </div>
+
+                        <div class="editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-link"></i> 转换结果</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-info btn-sm" id="url-copy" title="复制结果">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="btn btn-info btn-sm" id="url-swap" title="交换内容">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="url-output" placeholder="转换结果将显示在此处..." readonly></textarea>
+                            </div>
+                            <div class="editor-footer">
+                                <span class="char-count" id="url-output-count">0 字符</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls-section">
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="url-encode">
+                                <i class="fas fa-arrow-right"></i> 编码
+                            </button>
+                            <button class="btn btn-warning" id="url-decode">
+                                <i class="fas fa-arrow-left"></i> 解码
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="status-panel" id="url-status" style="display: none;">
+                        <div class="status-card" id="url-status-card">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="url-status-text">转换成功</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HTML 实体工具 -->
+                <div class="tool-section" id="html-tool">
+                    <div class="editor-layout">
+                        <div class="editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-pen"></i> 原文</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-secondary btn-sm" id="html-example" title="加载示例">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="html-clear" title="清空">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="html-paste" title="粘贴">
+                                        <i class="fas fa-paste"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="html-input" placeholder="请输入要编码或解码的 HTML 内容..."></textarea>
+                            </div>
+                            <div class="editor-footer">
+                                <span class="char-count" id="html-input-count">0 字符</span>
+                            </div>
+                        </div>
+
+                        <div class="editor-panel">
+                            <div class="section-header">
+                                <h3><i class="fas fa-code"></i> 转换结果</h3>
+                                <div class="action-buttons">
+                                    <button class="btn btn-info btn-sm" id="html-copy" title="复制结果">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="btn btn-info btn-sm" id="html-swap" title="交换内容">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <textarea id="html-output" placeholder="转换结果将显示在此处..." readonly></textarea>
+                            </div>
+                            <div class="editor-footer">
+                                <span class="char-count" id="html-output-count">0 字符</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls-section">
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="html-encode">
+                                <i class="fas fa-arrow-right"></i> 编码
+                            </button>
+                            <button class="btn btn-warning" id="html-decode">
+                                <i class="fas fa-arrow-left"></i> 解码
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="status-panel" id="html-status" style="display: none;">
+                        <div class="status-card" id="html-status-card">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="html-status-text">转换成功</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能特性 -->
+            <div class="features-section">
+                <h3><i class="fas fa-star"></i> 功能特性</h3>
+                <div class="features-grid">
+                    <div class="feature">
+                        <i class="fas fa-lock"></i>
+                        <h4>Base64 编解码</h4>
+                        <p>快速实现 Base64 字符串与原文之间的相互转换</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-link"></i>
+                        <h4>URL 编解码</h4>
+                        <p>安全处理 URL 中的特殊字符，防止传输错误</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-code"></i>
+                        <h4>HTML 实体</h4>
+                        <p>转换 HTML 特殊字符，防止 XSS 注入攻击</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-bolt"></i>
+                        <h4>即时转换</h4>
+                        <p>纯前端处理，数据不上传服务器，保护隐私安全</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>编码转换工具 · 纯前端处理 · 保护数据隐私</p>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/base64.js"></script>
+    <script src="js/url-encoder.js"></script>
+    <script src="js/html-encoder.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
