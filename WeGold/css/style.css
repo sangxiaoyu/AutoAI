@@ -1199,23 +1199,78 @@ body {
         gap: 16px;
         text-align: center;
     }
-    
+
     .overview-cards,
     .analysis-cards {
         grid-template-columns: 1fr;
     }
-    
+
     .chart-controls {
         flex-direction: column;
     }
-    
+
     .symbol-tabs,
     .timeframe-tabs {
         width: 100%;
         overflow-x: auto;
     }
-    
+
     .price-details {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ===== Visit Counter Float ===== */
+.visit-counter-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, rgba(30, 35, 50, 0.95), rgba(20, 25, 40, 0.95));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 30px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 999;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.visit-counter-float:hover {
+    border-color: rgba(255, 215, 0, 0.6);
+    transform: scale(1.05);
+}
+
+.visit-counter-float i {
+    color: #ffd700;
+    font-size: 1rem;
+}
+
+.visit-counter-float #visit-total {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffd700;
+}
+
+.visit-counter-float .visit-label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+    .visit-counter-float {
+        bottom: 10px;
+        right: 10px;
+        padding: 8px 14px;
+    }
+
+    .visit-counter-float #visit-total {
+        font-size: 1rem;
+    }
+
+    .visit-counter-float .visit-label {
+        display: none;
     }
 }

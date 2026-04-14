@@ -292,60 +292,6 @@
             </div>
         </section>
 
-        <!-- Statistics Section -->
-        <section class="statistics-section">
-            <div class="section-title">
-                <h2><i class="fas fa-chart-bar"></i> 访问统计</h2>
-                <button class="btn-reset" id="reset-stats" title="重置统计数据">
-                    <i class="fas fa-redo"></i> 重置
-                </button>
-            </div>
-            <div class="stats-overview">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="stat-ip">--</div>
-                        <div class="stat-label">您的 IP</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-eye"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="stat-views">0</div>
-                        <div class="stat-label">预览量</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-hand-pointer"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="stat-clicks">0</div>
-                        <div class="stat-label">点击次数</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-history"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="stat-visits">0</div>
-                        <div class="stat-label">访问次数</div>
-                    </div>
-                </div>
-            </div>
-            <div class="visit-history">
-                <h4><i class="fas fa-list"></i> 最近访问记录</h4>
-                <div class="history-list" id="visit-history">
-                    <div class="history-empty">暂无访问记录</div>
-                </div>
-            </div>
-        </section>
-
         <!-- Market Analysis -->
         <section class="market-analysis">
             <div class="section-title">
@@ -439,6 +385,69 @@
                 </span>
             </div>
         </footer>
+    </div>
+
+    <!-- Visit Counter Float -->
+    <div class="visit-counter-float" id="visit-counter" title="点击查看访问详情">
+        <i class="fas fa-eye"></i>
+        <span id="visit-total">0</span>
+        <span class="visit-label">次访问</span>
+    </div>
+
+    <!-- Visit Details Modal -->
+    <div class="modal-overlay" id="visit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-chart-bar"></i> 访问统计汇总</h3>
+                <button class="modal-close" id="close-visit-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="summary-stats">
+                    <div class="summary-item">
+                        <div class="summary-icon"><i class="fas fa-eye"></i></div>
+                        <div class="summary-info">
+                            <div class="summary-value" id="modal-total">0</div>
+                            <div class="summary-label">总访问次数</div>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-icon"><i class="fas fa-users"></i></div>
+                        <div class="summary-info">
+                            <div class="summary-value" id="modal-unique-ip">0</div>
+                            <div class="summary-label">独立IP数</div>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-icon"><i class="fas fa-calendar-day"></i></div>
+                        <div class="summary-info">
+                            <div class="summary-value" id="modal-days">0</div>
+                            <div class="summary-label">访问天数</div>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-icon"><i class="fas fa-globe"></i></div>
+                        <div class="summary-info">
+                            <div class="summary-value" id="modal-your-ip">--</div>
+                            <div class="summary-label">您的IP</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="visit-records-list">
+                    <h4><i class="fas fa-list"></i> 访问记录</h4>
+                    <div class="records-container" id="visit-records-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-export" id="export-visits">
+                    <i class="fas fa-download"></i> 导出记录
+                </button>
+                <button class="btn-clear" id="clear-visits">
+                    <i class="fas fa-trash"></i> 清空记录
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Toast -->

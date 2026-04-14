@@ -67,79 +67,159 @@ const priceCache = {
 const CACHE_DURATION = 600000; // 缓存有效期 10 分钟 (600秒)
 const STORAGE_KEY = 'goldSilver_cache';
 
-// ==================== 访问统计模块 ====================
+// ==================== 访问统计模块 (IndexedDB 存储) ====================
 
-// 统计数据存储键名
-const STATS_KEY = 'goldSilver_stats';
+const DB_NAME = 'GoldSilverDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'visits';
+let db = null;
 
-// 统计数据结构
-let stats = {
-    ip: null,
-    views: 0,        // 预览量（页面加载次数）
-    clicks: 0,       // 点击次数
-    visits: 0,       // 访问次数
-    history: [],     // 访问历史记录
-    lastVisit: null  // 上次访问时间
-};
-
-// 初始化统计
-function initStats() {
-    // 加载本地存储的统计
-    const stored = localStorage.getItem(STATS_KEY);
-    if (stored) {
-        try {
-            const data = JSON.parse(stored);
-            stats = { ...stats, ...data };
-        } catch (e) {
-            console.error('加载统计数据失败:', e);
-        }
-    }
-    
-    // 检查是否今天已经访问过
-    const today = new Date().toDateString();
-    if (stats.lastVisit !== today) {
-        // 新的一天，增加访问次数
-        stats.visits++;
-        stats.lastVisit = today;
-        saveStats();
-    }
-    
-    // 增加预览量
-    stats.views++;
-    saveStats();
-    
-    // 获取用户IP
-    fetchUserIP();
-    
-    // 添加访问记录
-    addVisitRecord();
-    
-    // 更新界面
-    updateStatsUI();
-    
-    // 绑定点击事件
-    bindClickEvents();
-    
-    // 绑定重置按钮
-    bindResetButton();
+// 打开 IndexedDB
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = () => {
+            console.error('[DB] 数据库打开失败');
+            reject(request.error);
+        };
+        
+        request.onsuccess = () => {
+            db = request.result;
+            console.log('[DB] 数据库连接成功');
+            resolve(db);
+        };
+        
+        request.onupgradeneeded = (event) => {
+            const database = event.target.result;
+            if (!database.objectStoreNames.contains(STORE_NAME)) {
+                database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                console.log('[DB] 对象存储已创建');
+            }
+        };
+    });
 }
 
-// 保存统计数据到 localStorage
-function saveStats() {
+// 添加访问记录到 IndexedDB
+function addVisitRecord(record) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('数据库未初始化'));
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.add(record);
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// 获取所有访问记录
+function getAllVisits() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('数据库未初始化'));
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.getAll();
+        
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// 检查记录是否存在
+function visitExists(id) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            resolve(false);
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(id);
+        
+        request.onsuccess = () => resolve(!!request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// 获取记录总数
+function getVisitCount() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            resolve(0);
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.count();
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// 获取当前时段标识
+function getTimeSlotId(ip) {
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10);
+    const hour = now.getHours().toString().padStart(2, '0');
+    return `${ip || 'unknown'}-${date}-${hour}`;
+}
+
+// 初始化访问统计
+async function initVisitStats() {
     try {
-        localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-    } catch (e) {
-        console.error('保存统计数据失败:', e);
+        // 打开数据库
+        await openDB();
+        
+        // 获取用户IP
+        const ip = await fetchUserIP();
+        
+        // 检查该时段是否已有记录
+        const slotId = getTimeSlotId(ip);
+        const exists = await visitExists(slotId);
+        
+        if (exists) {
+            console.log('[访问] 该时段已有记录，跳过:', slotId);
+        } else {
+            // 创建新记录
+            const now = new Date();
+            const record = {
+                id: slotId,
+                ip: ip,
+                time: now.toISOString(),
+                displayTime: now.toLocaleString('zh-CN'),
+                goldPrice: priceCache.XAUUSD?.price || null,
+                silverPrice: priceCache.XAGUSD?.price || null
+            };
+            
+            await addVisitRecord(record);
+            console.log('[访问] 新记录已保存:', slotId);
+        }
+        
+        // 更新计数器
+        updateVisitCounter();
+        
+    } catch (error) {
+        console.error('[访问] 初始化失败:', error);
     }
 }
 
 // 获取用户IP
 async function fetchUserIP() {
     try {
-        // 使用多个IP查询API作为备选
         const apis = [
             'https://api.ipify.org?format=json',
-            'https://api.myip.com/',
             'https://ipinfo.io/json'
         ];
         
@@ -148,183 +228,37 @@ async function fetchUserIP() {
                 const response = await fetch(api);
                 if (response.ok) {
                     const data = await response.json();
-                    // 兼容不同API返回格式
-                    stats.ip = data.ip || data.oriIp || data.ip_address || '未知';
-                    saveStats();
-                    updateStatsUI();
-                    console.log('[统计] 获取到IP:', stats.ip);
-                    break;
+                    const ip = data.ip || data.ipa || 'unknown';
+                    console.log('[访问] 获取到IP:', ip);
+                    return ip;
                 }
             } catch (e) {
-                console.warn(`[统计] IP查询API ${api} 失败:`, e);
+                console.warn(`[访问] IP查询失败:`, e);
             }
-        }
-        
-        if (!stats.ip) {
-            stats.ip = '获取失败';
-            updateStatsUI();
         }
     } catch (error) {
-        console.error('[统计] 获取IP失败:', error);
-        stats.ip = '获取失败';
-        updateStatsUI();
+        console.error('[访问] 获取IP失败:', error);
     }
+    return 'unknown';
 }
 
-// 添加访问记录
-function addVisitRecord() {
-    const now = new Date();
-    const record = {
-        time: now.toLocaleString('zh-CN'),
-        timestamp: now.getTime(),
-        goldPrice: priceCache.XAUUSD?.price || null,
-        silverPrice: priceCache.XAGUSD?.price || null
-    };
-    
-    stats.history.unshift(record); // 添加到最前面
-    
-    // 只保留最近20条记录
-    if (stats.history.length > 20) {
-        stats.history = stats.history.slice(0, 20);
-    }
-    
-    saveStats();
-}
-
-// 增加点击次数
-function addClick(action = 'general') {
-    stats.clicks++;
-    saveStats();
-    updateStatsUI();
-    
-    // 添加点击记录
-    const record = {
-        time: new Date().toLocaleString('zh-CN'),
-        timestamp: Date.now(),
-        action: action
-    };
-    stats.history.unshift(record);
-    if (stats.history.length > 20) {
-        stats.history = stats.history.slice(0, 20);
-    }
-    saveStats();
-    updateStatsUI();
-}
-
-// 更新统计界面
-function updateStatsUI() {
-    // 更新IP显示
-    const ipEl = document.getElementById('stat-ip');
-    if (ipEl) ipEl.textContent = stats.ip || '获取中...';
-    
-    // 更新预览量
-    const viewsEl = document.getElementById('stat-views');
-    if (viewsEl) viewsEl.textContent = stats.views;
-    
-    // 更新点击次数
-    const clicksEl = document.getElementById('stat-clicks');
-    if (clicksEl) clicksEl.textContent = stats.clicks;
-    
-    // 更新访问次数
-    const visitsEl = document.getElementById('stat-visits');
-    if (visitsEl) visitsEl.textContent = stats.visits;
-    
-    // 更新历史记录
-    const historyEl = document.getElementById('visit-history');
-    if (historyEl) {
-        if (stats.history.length === 0) {
-            historyEl.innerHTML = '<div class="history-empty">暂无访问记录</div>';
-        } else {
-            historyEl.innerHTML = stats.history.slice(0, 10).map(record => {
-                // 判断记录类型
-                let icon = 'fa-clock';
-                let label = '访问';
-                if (record.goldPrice !== undefined && record.goldPrice !== null) {
-                    icon = 'fa-eye';
-                    label = '预览';
-                } else if (record.action) {
-                    icon = 'fa-hand-pointer';
-                    label = record.action;
-                }
-                
-                return `
-                    <div class="history-item">
-                        <div class="history-icon">
-                            <i class="fas ${icon}"></i>
-                        </div>
-                        <div class="history-content">
-                            <div class="history-label">${label}</div>
-                            <div class="history-time">${record.time}</div>
-                            ${record.goldPrice ? `<div class="history-price">金: ${record.goldPrice.toFixed(2)} | 银: ${(record.silverPrice || 0).toFixed(2)}</div>` : ''}
-                        </div>
-                    </div>
-                `;
-            }).join('');
+// 更新悬浮计数器
+async function updateVisitCounter() {
+    try {
+        const count = await getVisitCount();
+        const counter = document.getElementById('visit-total');
+        if (counter) {
+            counter.textContent = count;
         }
-    }
-}
-
-// 绑定点击事件
-function bindClickEvents() {
-    // 品种切换按钮
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            addClick('切换品种');
-        });
-    });
-    
-    // 周期切换按钮
-    document.querySelectorAll('.tf-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            addClick('切换周期');
-        });
-    });
-    
-    // 卡片点击
-    document.querySelectorAll('.overview-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const symbol = card.dataset.symbol;
-            if (symbol) {
-                addClick(`查看${symbol}`);
-            }
-        });
-    });
-    
-    // 统计面板自身点击
-    document.querySelector('.statistics-section')?.addEventListener('click', (e) => {
-        if (!e.target.closest('.btn-reset')) {
-            addClick('查看统计');
-        }
-    });
-}
-
-// 绑定重置按钮
-function bindResetButton() {
-    const resetBtn = document.getElementById('reset-stats');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            if (confirm('确定要重置所有统计数据吗？')) {
-                stats = {
-                    ip: null,
-                    views: 0,
-                    clicks: 0,
-                    visits: 0,
-                    history: [],
-                    lastVisit: null
-                };
-                saveStats();
-                updateStatsUI();
-                fetchUserIP();
-                showToast('统计数据已重置', 'success');
-            }
-        });
+    } catch (error) {
+        console.error('[访问] 更新计数器失败:', error);
     }
 }
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-    // 先初始化统计（独立于其他初始化）
-    initStats();
+    // 初始化访问统计（独立于其他初始化）
+    initVisitStats();
     
     initUI();
     connectAPI();
