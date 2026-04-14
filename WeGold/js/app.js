@@ -29,14 +29,31 @@ const publicCache = {
 };
 let rateLimitBackoff = 1; // 退避时间（分钟）
 const MAX_BACKOFF = 30;   // 最大退避时间
+const BACKOFF_KEY = 'goldSilver_backoff'; // 退避状态存储键
+let isRequestInProgress = false; // 防止并发请求
 let priceHistory = {
     XAUUSD: [],
     XAGUSD: []
 };
+
+// K线数据存储 (按周期分开)
+const klineData = {
+    XAUUSD: {},
+    XAGUSD: {}
+};
+
+// 时间周期映射 (UI选择 -> API kType)
+const PERIOD_MAP = {
+    10: 2,   // 10分钟 -> 5分钟K线
+    30: 4,   // 30分钟 -> 30分钟K线
+    60: 5,   // 1小时 -> 60分钟K线
+    240: 5   // 4小时 -> 60分钟K线 (需要模拟)
+};
+
 let chart = null;
 let candleSeries = null;
 let currentSymbol = 'XAUUSD';
-let currentPeriod = 1;
+let currentPeriod = 60; // 默认1小时 (分钟)
 
 // 技术分析数据存储
 let technicalData = {
@@ -320,6 +337,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 初始化技术分析界面默认值
     resetTechnicalUI();
+    
+    // 立即用缓存数据渲染交易信号（同步，先显示内容）
+    Object.keys(SYMBOLS).forEach(symbol => {
+        if (technicalData[symbol] && technicalData[symbol].currentPrice) {
+            updateTradingSignal(symbol, technicalData[symbol]);
+        }
+    });
+    
+    // 初始获取K线数据（后台异步）
+    refreshKlineData();
 });
 
 // 重置技术分析界面
@@ -391,6 +418,9 @@ function initUI() {
             document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentPeriod = parseInt(btn.dataset.period);
+            
+            // 重新获取K线数据并更新技术分析
+            refreshKlineData();
         });
     });
 
@@ -442,12 +472,47 @@ function loadCacheFromStorage() {
                 console.log('[缓存] 技术分析数据已恢复');
             }
             
+            // 恢复K线缓存
+            if (data.klines) {
+                Object.keys(data.klines).forEach(symbol => {
+                    if (klineData[symbol]) {
+                        klineData[symbol] = { ...klineData[symbol], ...data.klines[symbol] };
+                    }
+                });
+                console.log('[缓存] K线数据已恢复');
+            }
+            
+            // 恢复退避状态
+            if (data.backoff) {
+                const elapsed = (now - data.backoff.time) / 1000 / 60; // 经过的分钟数
+                const remaining = data.backoff.minutes - elapsed;
+                if (remaining > 0) {
+                    rateLimitBackoff = Math.ceil(remaining);
+                    console.log(`[缓存] 恢复退避状态: 还需等待 ${rateLimitBackoff} 分钟`);
+                }
+            }
+            
             return hasValidCache;
         }
     } catch (e) {
         console.error('[缓存] 读取本地存储失败:', e);
     }
     return false;
+}
+
+// 保存退避状态到 localStorage
+function saveBackoffState() {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        const data = stored ? JSON.parse(stored) : {};
+        data.backoff = {
+            minutes: rateLimitBackoff,
+            time: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+        console.error('[退避] 保存状态失败:', e);
+    }
 }
 
 // 保存缓存到 localStorage
@@ -468,6 +533,18 @@ function saveCacheToStorage() {
         
         // 保存技术分析数据
         data.technical = { ...technicalData };
+        
+        // 保存K线缓存
+        data.klines = {};
+        Object.keys(klineData).forEach(symbol => {
+            data.klines[symbol] = {};
+            Object.keys(klineData[symbol]).forEach(period => {
+                // 只保存最近50条K线数据
+                if (klineData[symbol][period] && klineData[symbol][period].length > 0) {
+                    data.klines[symbol][period] = klineData[symbol][period].slice(-50);
+                }
+            });
+        });
         
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         console.log('[缓存] 已保存到本地存储');
@@ -593,23 +670,32 @@ async function fetchTickData(symbol, forceRefresh = false) {
         
         if (!response.ok) {
             if (response.status === 429) {
-                console.warn(`[${symbol}] 请求过于频繁(429)，使用公共缓存`);
+                console.warn(`[${symbol}] 请求过于频繁(429)，进入退避期`);
                 
-                // 增加退避时间
+                // 增加退避时间（指数退避）
                 rateLimitBackoff = Math.min(rateLimitBackoff * 2, MAX_BACKOFF);
                 console.warn(`[${symbol}] 退避时间调整为: ${rateLimitBackoff}分钟`);
                 
+                // 保存退避状态
+                saveBackoffState();
+                
+                // 停止当前的退避倒计时（如果有）
+                if (window.backoffTimer) {
+                    clearInterval(window.backoffTimer);
+                }
+                
                 // 延迟递减退避时间
-                const backoffInterval = setInterval(() => {
-                    rateLimitBackoff = Math.max(1, rateLimitBackoff - 1);
+                window.backoffTimer = setInterval(() => {
+                    rateLimitBackoff = Math.max(0, rateLimitBackoff - 1);
+                    saveBackoffState();
                     updateDataStatus('backoff', rateLimitBackoff);
-                    if (rateLimitBackoff <= 1) {
-                        clearInterval(backoffInterval);
+                    if (rateLimitBackoff <= 0) {
+                        clearInterval(window.backoffTimer);
                         console.log('[退避] 已恢复正常轮询');
                     }
                 }, 60000); // 每分钟递减
                 
-                // 使用公共缓存数据
+                // 立即使用公共缓存数据更新显示
                 if (publicCache.data[symbol]) {
                     const cached = publicCache.data[symbol];
                     handleQuote({
@@ -620,6 +706,16 @@ async function fetchTickData(symbol, forceRefresh = false) {
                     }, false);
                     publicCache.isStale = true;
                     updateDataStatus('stale');
+                } else {
+                    // 如果没有公共缓存，使用本地缓存
+                    if (priceCache[symbol]?.price) {
+                        handleQuote({
+                            s: symbol,
+                            ld: priceCache[symbol].price,
+                            t: priceCache[symbol].time,
+                            v: 0
+                        }, false);
+                    }
                 }
                 return;
             }
@@ -672,19 +768,42 @@ async function fetchTickData(symbol, forceRefresh = false) {
 
 // 轮询获取最新数据（增加退避机制）
 async function pollData() {
-    // 如果处于退避期，跳过本次轮询
-    if (rateLimitBackoff > 1) {
-        console.log(`[轮询] 处于退避期(${rateLimitBackoff}分钟)，跳过`);
+    // 如果处于退避期，使用缓存数据更新显示
+    if (rateLimitBackoff > 0) {
+        console.log(`[轮询] 处于退避期(${rateLimitBackoff}分钟)，使用缓存`);
+        Object.keys(SYMBOLS).forEach(symbol => {
+            if (priceCache[symbol]?.price) {
+                handleQuote({
+                    s: symbol,
+                    ld: priceCache[symbol].price,
+                    t: priceCache[symbol].time,
+                    v: 0
+                }, false);
+            }
+        });
         updateDataStatus('caching', rateLimitBackoff);
         return;
     }
     
+    // 如果有请求正在进行，跳过本次轮询
+    if (isRequestInProgress) {
+        console.log('[轮询] 请求进行中，跳过');
+        return;
+    }
+    
+    isRequestInProgress = true;
+    
     try {
-        const promises = Object.keys(SYMBOLS).map(symbol => fetchTickData(symbol, true)); // 轮询时强制刷新
-        await Promise.all(promises);
-        saveCacheToStorage(); // 轮询后保存缓存
+        // 顺序请求，避免并发触发429
+        for (const symbol of Object.keys(SYMBOLS)) {
+            await fetchTickData(symbol, true);
+            await new Promise(resolve => setTimeout(resolve, 500)); // 请求间隔500ms
+        }
+        saveCacheToStorage();
     } catch (error) {
         console.error('轮询失败:', error);
+    } finally {
+        isRequestInProgress = false;
     }
 }
 
@@ -693,8 +812,94 @@ function startPolling() {
     if (pollInterval) {
         clearInterval(pollInterval);
     }
-    // 每30秒轮询一次 (避免触发 429 限流)
-    pollInterval = setInterval(pollData, 30000);
+    // 60秒轮询一次，减少触发429的概率
+    pollInterval = setInterval(pollData, 60000);
+    
+    // 立即执行一次
+    pollData();
+}
+
+// 获取K线数据
+async function fetchKlineData(symbol, period) {
+    const info = SYMBOLS[symbol];
+    if (!info) return;
+    
+    const kType = PERIOD_MAP[period] || 5; // 默认60分钟
+    const limit = period === 240 ? 100 : 100; // 4小时需要更多数据来模拟
+    
+    try {
+        const url = `${ITICK_API_BASE}/stock/kline?region=${info.region}&code=${info.code}&kType=${kType}&limit=${limit}`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'token': ITICK_TOKEN
+            }
+        });
+        
+        if (!response.ok) {
+            console.warn(`[${symbol}] K线获取失败: HTTP ${response.status}`);
+            return;
+        }
+        
+        const json = await response.json();
+        
+        if (json.code === 0 && json.data && json.data.length > 0) {
+            // 转换K线数据格式
+            const klines = json.data.map(k => ({
+                time: k.t,
+                open: k.o,
+                high: k.h,
+                low: k.l,
+                close: k.c,
+                volume: k.v
+            }));
+            
+            // 存储K线数据
+            klineData[symbol][period] = klines;
+            
+            console.log(`[${symbol}] ${period}分钟K线数据已加载: ${klines.length}条`);
+            
+            // 如果是4小时周期，需要模拟
+            if (period === 240) {
+                klineData[symbol][240] = simulate4HKline(klines);
+            }
+            
+            // 执行技术分析（会自动更新交易信号）
+            runTechnicalAnalysis(symbol, period);
+        } else {
+            console.warn(`[${symbol}] K线数据为空:`, json.msg);
+        }
+    } catch (error) {
+        console.error(`[${symbol}] 获取K线失败:`, error);
+    }
+}
+
+// 模拟4小时K线 (合并3个1小时K线)
+function simulate4HKline(hourlyKlines) {
+    const klines = [];
+    for (let i = 0; i < hourlyKlines.length; i += 3) {
+        const chunk = hourlyKlines.slice(i, i + 3);
+        if (chunk.length === 3) {
+            klines.push({
+                time: chunk[0].time,
+                open: chunk[0].open,
+                high: Math.max(...chunk.map(k => k.high)),
+                low: Math.min(...chunk.map(k => k.low)),
+                close: chunk[2].close,
+                volume: chunk.reduce((sum, k) => sum + k.volume, 0)
+            });
+        }
+    }
+    return klines;
+}
+
+// 刷新当前时间周期的K线数据
+function refreshKlineData() {
+    Object.keys(SYMBOLS).forEach(symbol => {
+        fetchKlineData(symbol, currentPeriod);
+    });
 }
 
 // 页面卸载前保存缓存
@@ -744,8 +949,8 @@ function handleQuote(data, updateCache = true) {
     // 更新界面
     updatePriceDisplay(symbol, price, change, changePercent, volume, open, high, low);
     
-    // 执行技术分析
-    runTechnicalAnalysis(symbol);
+    // 执行技术分析（使用当前周期）
+    runTechnicalAnalysis(symbol, currentPeriod);
     
     // 更新分析
     updateAnalysis();
@@ -950,19 +1155,28 @@ function calculateMultiPeriodTrend(history) {
 }
 
 // 执行技术分析
-function runTechnicalAnalysis(symbol) {
-    const history = priceHistory[symbol];
-    console.log(`[技术分析] ${symbol} 历史数据数量:`, history.length);
+function runTechnicalAnalysis(symbol, period = 60) {
+    // 优先使用K线数据，否则使用tick累积数据
+    const klines = klineData[symbol]?.[period];
+    let history, currentPrice, prices;
     
-    if (history.length < 5) {
-        console.log(`[技术分析] ${symbol} 数据不足，等待更多数据...`);
-        return;
+    if (klines && klines.length > 5) {
+        // 使用K线数据
+        history = klines.map(k => ({ price: k.close, time: k.time }));
+        currentPrice = klines[klines.length - 1].close;
+        prices = klines.map(k => k.close);
+        console.log(`[技术分析] ${symbol} ${period}分钟K线数据:`, history.length, '条');
+    } else {
+        // 回退到tick累积数据
+        history = priceHistory[symbol];
+        if (history.length < 5) {
+            console.log(`[技术分析] ${symbol} 数据不足，等待更多数据...`);
+            return;
+        }
+        currentPrice = history[history.length - 1].price;
+        prices = history.map(h => h.price);
+        console.log(`[技术分析] ${symbol} tick数据:`, history.length, '条');
     }
-    
-    const currentPrice = history[history.length - 1].price;
-    console.log(`[技术分析] ${symbol} 当前价格:`, currentPrice);
-    
-    const prices = history.map(h => h.price);
     
     // 计算技术指标
     const rsi = calculateRSI(history);
