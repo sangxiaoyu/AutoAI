@@ -2,6 +2,10 @@
  * 黄金白银分析看板 - iTick REST API 数据处理
  */
 
+// ===== 版本控制 =====
+const APP_VERSION = '1.0.0'; // 更新此版本号可强制刷新用户缓存
+const VERSION_KEY = 'goldSilver_version';
+
 // iTick REST API (根据官方文档)
 const ITICK_API_BASE = 'https://api.itick.org';
 const ITICK_TOKEN = '81e536b689584a9c8ce10b8c5a90ae5dee6617d89ee443b4b4087e9ed217eda4';
@@ -70,8 +74,9 @@ const STORAGE_KEY = 'goldSilver_cache';
 // ==================== 访问统计模块 (IndexedDB 存储) ====================
 
 const DB_NAME = 'GoldSilverDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // 版本升级
 const STORE_NAME = 'visits';
+const SETTINGS_STORE = 'settings';
 let db = null;
 
 // 打开 IndexedDB
@@ -94,10 +99,48 @@ function openDB() {
             const database = event.target.result;
             if (!database.objectStoreNames.contains(STORE_NAME)) {
                 database.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                console.log('[DB] 对象存储已创建');
+                console.log('[DB] 访问记录存储已创建');
+            }
+            if (!database.objectStoreNames.contains(SETTINGS_STORE)) {
+                database.createObjectStore(SETTINGS_STORE, { keyPath: 'key' });
+                console.log('[DB] 设置存储已创建');
             }
         };
     });
+}
+
+// 检查并更新版本
+async function checkVersion() {
+    try {
+        const storedVersion = localStorage.getItem(VERSION_KEY);
+        
+        if (storedVersion !== APP_VERSION) {
+            console.log(`[版本] 检测到版本更新: ${storedVersion} -> ${APP_VERSION}`);
+            
+            // 清除旧缓存
+            await clearOldCache();
+            
+            // 保存新版本号
+            localStorage.setItem(VERSION_KEY, APP_VERSION);
+            
+            // 提示用户
+            showToast(`检测到新版本 ${APP_VERSION}，缓存已更新`, 'info');
+        }
+    } catch (error) {
+        console.error('[版本] 版本检查失败:', error);
+    }
+}
+
+// 清除旧缓存
+async function clearOldCache() {
+    try {
+        // 清除旧版localStorage缓存
+        localStorage.removeItem('goldSilver_cache');
+        localStorage.removeItem('goldSilver_stats');
+        console.log('[缓存] 旧缓存已清除');
+    } catch (e) {
+        console.error('[缓存] 清除失败:', e);
+    }
 }
 
 // 添加访问记录到 IndexedDB
@@ -179,6 +222,9 @@ function getTimeSlotId(ip) {
 // 初始化访问统计
 async function initVisitStats() {
     try {
+        // 检查版本（可能清除旧缓存）
+        await checkVersion();
+        
         // 打开数据库
         await openDB();
         
@@ -259,6 +305,9 @@ async function updateVisitCounter() {
 document.addEventListener('DOMContentLoaded', () => {
     // 初始化访问统计（独立于其他初始化）
     initVisitStats();
+    
+    // 初始化弹窗功能
+    initVisitModal();
     
     initUI();
     connectAPI();
@@ -1487,4 +1536,164 @@ function showToast(message, type = 'info') {
     toast.innerHTML = `<i class="fas ${icons[type]}"></i>${message}`;
     toast.className = `toast ${type} show`;
     setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ==================== 访问统计弹窗功能 ====================
+
+// 初始化弹窗
+function initVisitModal() {
+    const counter = document.getElementById('visit-counter');
+    const modal = document.getElementById('visit-modal');
+    const closeBtn = document.getElementById('close-visit-modal');
+    const exportBtn = document.getElementById('export-visits');
+    const clearBtn = document.getElementById('clear-visits');
+    
+    if (!counter || !modal) return;
+    
+    // 点击计数器打开弹窗
+    counter.addEventListener('click', async () => {
+        modal.classList.add('show');
+        await loadVisitDetails();
+    });
+    
+    // 点击关闭按钮
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    }
+    
+    // 点击背景关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+        }
+    });
+    
+    // 导出记录
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportVisitRecords);
+    }
+    
+    // 清空记录
+    if (clearBtn) {
+        clearBtn.addEventListener('click', async () => {
+            if (confirm('确定要清空所有访问记录吗？此操作不可恢复！')) {
+                await clearAllVisits();
+                await loadVisitDetails();
+                updateVisitCounter();
+                showToast('访问记录已清空', 'success');
+            }
+        });
+    }
+}
+
+// 加载访问详情
+async function loadVisitDetails() {
+    try {
+        const records = await getAllVisits();
+        const container = document.getElementById('visit-records-list');
+        const modalTotal = document.getElementById('modal-total');
+        const modalUniqueIp = document.getElementById('modal-unique-ip');
+        const modalDays = document.getElementById('modal-days');
+        const modalYourIp = document.getElementById('modal-your-ip');
+        
+        // 统计汇总
+        if (modalTotal) modalTotal.textContent = records.length;
+        
+        // 独立IP数
+        const uniqueIps = new Set(records.map(r => r.ip).filter(ip => ip !== 'unknown'));
+        if (modalUniqueIp) modalUniqueIp.textContent = uniqueIps.size;
+        
+        // 访问天数
+        const uniqueDays = new Set(records.map(r => r.id?.split('-').slice(1, 4).join('-')).filter(Boolean));
+        if (modalDays) modalDays.textContent = uniqueDays.size;
+        
+        // 您的IP
+        if (modalYourIp) modalYourIp.textContent = records[0]?.ip || '获取中...';
+        
+        // 渲染记录列表
+        if (container) {
+            if (records.length === 0) {
+                container.innerHTML = '<div class="empty-records">暂无访问记录</div>';
+            } else {
+                // 按时间倒序排列
+                const sorted = records.sort((a, b) => {
+                    return new Date(b.time) - new Date(a.time);
+                });
+                
+                container.innerHTML = sorted.slice(0, 50).map(record => `
+                    <div class="record-item">
+                        <div class="record-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="record-info">
+                            <div class="record-ip">${record.ip || '未知IP'}</div>
+                            <div class="record-time">${record.displayTime || record.time}</div>
+                            ${record.goldPrice ? `<div class="record-price">金: ${record.goldPrice.toFixed(2)} | 银: ${(record.silverPrice || 0).toFixed(2)}</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                
+                if (records.length > 50) {
+                    container.innerHTML += `<div class="records-more">还有 ${records.length - 50} 条记录...</div>`;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('[弹窗] 加载失败:', error);
+        const container = document.getElementById('visit-records-list');
+        if (container) container.innerHTML = '<div class="empty-records">加载失败</div>';
+    }
+}
+
+// 清空所有访问记录
+function clearAllVisits() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            resolve();
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.clear();
+        
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// 导出访问记录
+function exportVisitRecords() {
+    getAllVisits().then(records => {
+        if (records.length === 0) {
+            showToast('暂无访问记录可导出', 'info');
+            return;
+        }
+        
+        // 转换为CSV
+        const headers = ['IP', '访问时间', '黄金价格', '白银价格'];
+        const rows = records.map(r => [
+            r.ip || '未知',
+            r.displayTime || r.time,
+            r.goldPrice ? r.goldPrice.toFixed(2) : '-',
+            r.silverPrice ? r.silverPrice.toFixed(2) : '-'
+        ]);
+        
+        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `goldSilver_visits_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        showToast(`已导出 ${records.length} 条记录`, 'success');
+    }).catch(error => {
+        console.error('[导出] 失败:', error);
+        showToast('导出失败', 'error');
+    });
 }
