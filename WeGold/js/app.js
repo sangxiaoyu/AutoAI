@@ -992,8 +992,8 @@ function getStableTrend(symbol, trendType, newTrend) {
     const counts = { '上涨': 0, '下跌': 0, '震荡': 0 };
     history.forEach(t => counts[t]++);
     
-    // 计算确认度
-    const confirmCount = Math.min(...Object.values(counts).filter(c => c > 0)) || 0;
+    // 计算确认度 - 取最大趋势的计数
+    const confirmCount = Math.max(...Object.values(counts));
     const total = history.length;
     const confirmRate = total > 0 ? confirmCount / total : 0;
     
