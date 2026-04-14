@@ -115,6 +115,7 @@
         .tool-card.encode { --accent: #667eea; --accent-end: #764ba2; }
         .tool-card.ip { --accent: #11998e; --accent-end: #38ef7d; }
         .tool-card.translate { --accent: #fc4a1a; --accent-end: #f7b733; }
+        .tool-card.gold { --accent: #ffd700; --accent-end: #ffa500; }
 
         .tool-card::before {
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-end) 100%);
@@ -270,6 +271,24 @@
         </header>
 
         <main class="tools-grid">
+            <!-- 黄金白银看板 -->
+            <a href="WeGold/index.html" class="tool-card gold">
+                <div class="tool-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <h3>黄金白银分析</h3>
+                <p>实时行情监控，专业技术分析。多币种交叉盘对比，把握贵金属市场动向。</p>
+                <div class="tool-features">
+                    <span class="feature-tag"><i class="fas fa-chart-line"></i> 实时行情</span>
+                    <span class="feature-tag"><i class="fas fa-balance-scale"></i> 金银比</span>
+                    <span class="feature-tag"><i class="fas fa-percentage"></i> 波动率</span>
+                    <span class="feature-tag"><i class="fas fa-exchange-alt"></i> 交叉盘</span>
+                </div>
+                <div class="arrow-hint">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
             <!-- JSON & SQL 格式化 -->
             <a href="JsonHelper/index.html" class="tool-card json">
                 <div class="tool-icon">

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黄金白银分析看板 - Gold & Silver</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <h1>黄金白银分析</h1>
+                </div>
+                <p class="subtitle">实时行情 · 专业分析 · 把握先机</p>
+            </div>
+            <div class="header-right">
+                <div class="connection-status" id="connection-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">连接中...</span>
+                </div>
+                <div class="update-time">
+                    <i class="fas fa-clock"></i>
+                    <span id="current-time">--:--:--</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Market Overview -->
+        <section class="market-overview">
+            <div class="section-title">
+                <h2><i class="fas fa-tachometer-alt"></i> 市场概览</h2>
+                <span class="data-source">数据来源: iTick</span>
+            </div>
+            <div class="overview-cards" id="overview-cards">
+                <!-- Gold Card -->
+                <div class="overview-card gold" data-symbol="XAUUSD" data-name="黄金/美元">
+                    <div class="card-header">
+                        <div class="symbol-info">
+                            <span class="symbol-icon gold-icon">XAU</span>
+                            <div>
+                                <h3>黄金 / 美元</h3>
+                                <p class="symbol-full">Gold / US Dollar</p>
+                            </div>
+                        </div>
+                        <div class="card-badge">主货币对</div>
+                    </div>
+                    <div class="price-section">
+                        <div class="current-price" id="price-XAUUSD">--</div>
+                        <div class="price-change" id="change-XAUUSD">
+                            <span class="change-value">--</span>
+                            <span class="change-percent">--</span>
+                        </div>
+                    </div>
+                    <div class="price-details">
+                        <div class="detail-item">
+                            <span class="label">开盘</span>
+                            <span class="value" id="open-XAUUSD">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">最高</span>
+                            <span class="value high" id="high-XAUUSD">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">最低</span>
+                            <span class="value low" id="low-XAUUSD">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">成交量</span>
+                            <span class="value" id="volume-XAUUSD">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Silver Card -->
+                <div class="overview-card silver" data-symbol="XAGUSD" data-name="白银/美元">
+                    <div class="card-header">
+                        <div class="symbol-info">
+                            <span class="symbol-icon silver-icon">XAG</span>
+                            <div>
+                                <h3>白银 / 美元</h3>
+                                <p class="symbol-full">Silver / US Dollar</p>
+                            </div>
+                        </div>
+                        <div class="card-badge silver-badge">贵金属</div>
+                    </div>
+                    <div class="price-section">
+                        <div class="current-price silver-price" id="price-XAGUSD">--</div>
+                        <div class="price-change" id="change-XAGUSD">
+                            <span class="change-value">--</span>
+                            <span class="change-percent">--</span>
+                        </div>
+                    </div>
+                    <div class="price-details">
+                        <div class="detail-item">
+                            <span class="label">开盘</span>
+                            <span class="value" id="open-XAGUSD">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">最高</span>
+                            <span class="value high" id="high-XAGUSD">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">最低</span>
+                            <span class="value low" id="low-XAGUSD">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">成交量</span>
+                            <span class="value" id="volume-XAGUSD">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gold/Silver Ratio -->
+                <div class="overview-card ratio-card" data-symbol="XAUUSD-XAGUSD">
+                    <div class="card-header">
+                        <div class="symbol-info">
+                            <span class="symbol-icon ratio-icon">金银比</span>
+                            <div>
+                                <h3>金银比</h3>
+                                <p class="symbol-full">Gold/Silver Ratio</p>
+                            </div>
+                        </div>
+                        <div class="card-badge ratio-badge">波动指标</div>
+                    </div>
+                    <div class="price-section">
+                        <div class="current-price ratio-price" id="price-ratio">--</div>
+                        <div class="price-change" id="change-ratio">
+                            <span class="change-value">--</span>
+                            <span class="change-percent">--</span>
+                        </div>
+                    </div>
+                    <div class="ratio-bar">
+                        <div class="bar-label">比值区间</div>
+                        <div class="bar-track">
+                            <div class="bar-fill" id="ratio-bar"></div>
+                            <div class="bar-markers">
+                                <span>70</span>
+                                <span>80</span>
+                                <span>90</span>
+                            </div>
+                        </div>
+                        <div class="bar-range">历史均值: 80</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Analysis Section -->
+        <section class="chart-section">
+            <div class="section-title">
+                <h2><i class="fas fa-chart-line"></i> 技术分析</h2>
+                <div class="chart-controls">
+                    <div class="symbol-tabs">
+                        <button class="tab-btn active" data-symbol="XAUUSD">
+                            <span class="tab-icon gold-icon">XAU</span> 黄金
+                        </button>
+                        <button class="tab-btn" data-symbol="XAGUSD">
+                            <span class="tab-icon silver-icon">XAG</span> 白银
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="analysis-grid">
+                <!-- Trend Prediction -->
+                <div class="analysis-panel trend-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-bullseye"></i> 趋势预判</h3>
+                    </div>
+                    <div class="trend-signal" id="trend-signal">
+                        <div class="signal-icon">
+                            <i class="fas fa-question"></i>
+                        </div>
+                        <div class="signal-text">等待数据...</div>
+                        <div class="signal-confidence">置信度: <span id="confidence">--</span>%</div>
+                    </div>
+                    <div class="trend-indicators">
+                        <div class="indicator-row">
+                            <span class="indicator-label">短期趋势</span>
+                            <span class="indicator-value" id="short-trend">--</span>
+                        </div>
+                        <div class="indicator-row">
+                            <span class="indicator-label">中期趋势</span>
+                            <span class="indicator-value" id="mid-trend">--</span>
+                        </div>
+                        <div class="indicator-row">
+                            <span class="indicator-label">长期趋势</span>
+                            <span class="indicator-value" id="long-trend">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Levels -->
+                <div class="analysis-panel levels-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-level-down-alt"></i> 关键价位</h3>
+                    </div>
+                    <div class="levels-display">
+                        <div class="level-item resistance">
+                            <div class="level-label">阻力位</div>
+                            <div class="level-value" id="resistance">--</div>
+                        </div>
+                        <div class="level-item current">
+                            <div class="level-label">当前价</div>
+                            <div class="level-value" id="current-price-level">--</div>
+                        </div>
+                        <div class="level-item support">
+                            <div class="level-label">支撑位</div>
+                            <div class="level-value" id="support">--</div>
+                        </div>
+                    </div>
+                    <div class="level-range">
+                        <span>日内波动范围</span>
+                        <div class="range-bar">
+                            <div class="range-fill" id="level-range-fill"></div>
+                            <div class="range-marker" id="level-range-marker"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RSI & MACD -->
+                <div class="analysis-panel indicators-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-wave-square"></i> 技术指标</h3>
+                    </div>
+                    <div class="indicator-cards">
+                        <div class="indicator-card">
+                            <div class="indicator-name">RSI (14)</div>
+                            <div class="indicator-value" id="rsi-value">--</div>
+                            <div class="indicator-desc" id="rsi-desc">--</div>
+                            <div class="indicator-bar">
+                                <div class="bar-70">70</div>
+                                <div class="bar-30">30</div>
+                                <div class="bar-fill" id="rsi-bar"></div>
+                            </div>
+                        </div>
+                        <div class="indicator-card">
+                            <div class="indicator-name">MACD</div>
+                            <div class="indicator-value" id="macd-value">--</div>
+                            <div class="indicator-desc" id="macd-desc">--</div>
+                        </div>
+                        <div class="indicator-card">
+                            <div class="indicator-name">MA 均线</div>
+                            <div class="ma-values">
+                                <span>MA5: <b id="ma5">--</b></span>
+                                <span>MA20: <b id="ma20">--</b></span>
+                            </div>
+                            <div class="indicator-desc" id="ma-desc">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trading Signals -->
+                <div class="analysis-panel signals-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-lightbulb"></i> 操作建议</h3>
+                    </div>
+                    <div class="signals-list" id="signals-list">
+                        <div class="signal-item">
+                            <i class="fas fa-clock"></i>
+                            <span>正在分析市场数据...</span>
+                        </div>
+                    </div>
+                    <div class="risk-info">
+                        <div class="risk-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>建议止损: <b id="stop-loss">--</b></span>
+                        </div>
+                        <div class="risk-item">
+                            <i class="fas fa-bullseye"></i>
+                            <span>目标价位: <b id="target-price">--</b></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cross Pairs -->
+        <section class="cross-pairs">
+            <div class="section-title">
+                <h2><i class="fas fa-exchange-alt"></i> 交叉盘</h2>
+            </div>
+            <div class="pairs-grid" id="pairs-grid">
+                <!-- Dynamic pairs will be inserted here -->
+            </div>
+        </section>
+
+        <!-- Statistics Section -->
+        <section class="statistics-section">
+            <div class="section-title">
+                <h2><i class="fas fa-chart-bar"></i> 访问统计</h2>
+                <button class="btn-reset" id="reset-stats" title="重置统计数据">
+                    <i class="fas fa-redo"></i> 重置
+                </button>
+            </div>
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="stat-ip">--</div>
+                        <div class="stat-label">您的 IP</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="stat-views">0</div>
+                        <div class="stat-label">预览量</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-hand-pointer"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="stat-clicks">0</div>
+                        <div class="stat-label">点击次数</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="stat-visits">0</div>
+                        <div class="stat-label">访问次数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="visit-history">
+                <h4><i class="fas fa-list"></i> 最近访问记录</h4>
+                <div class="history-list" id="visit-history">
+                    <div class="history-empty">暂无访问记录</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Market Analysis -->
+        <section class="market-analysis">
+            <div class="section-title">
+                <h2><i class="fas fa-magnifying-glass-chart"></i> 市场分析</h2>
+            </div>
+            <div class="analysis-cards">
+                <div class="analysis-card">
+                    <div class="analysis-header">
+                        <i class="fas fa-fire"></i>
+                        <h3>波动率分析</h3>
+                    </div>
+                    <div class="analysis-content">
+                        <div class="volatility-meter">
+                            <div class="meter-label">
+                                <span>低</span>
+                                <span>波动率</span>
+                                <span>高</span>
+                            </div>
+                            <div class="meter-track">
+                                <div class="meter-fill" id="volatility-fill"></div>
+                                <div class="meter-pointer" id="volatility-pointer"></div>
+                            </div>
+                            <div class="volatility-value" id="volatility-value">--%</div>
+                        </div>
+                        <div class="volatility-desc" id="volatility-desc">
+                            正在计算波动率...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analysis-card">
+                    <div class="analysis-header">
+                        <i class="fas fa-arrows-alt-h"></i>
+                        <h3>金银联动</h3>
+                    </div>
+                    <div class="analysis-content">
+                        <div class="correlation-display">
+                            <div class="correlation-value" id="correlation-value">--</div>
+                            <div class="correlation-label">相关性系数</div>
+                        </div>
+                        <div class="correlation-bar">
+                            <div class="c-bar negative" id="c-bar-neg"></div>
+                            <div class="c-bar positive" id="c-bar-pos"></div>
+                            <div class="c-pointer" id="c-pointer"></div>
+                        </div>
+                        <div class="correlation-desc" id="correlation-desc">
+                            正在计算相关性...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analysis-card">
+                    <div class="analysis-header">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        <h3>24小时统计</h3>
+                    </div>
+                    <div class="analysis-content">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-label">黄金范围</div>
+                                <div class="stat-value gold-text" id="gold-range">--</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">白银范围</div>
+                                <div class="stat-value silver-text" id="silver-range">--</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">黄金波动</div>
+                                <div class="stat-value" id="gold-fluctuation">--</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">白银波动</div>
+                                <div class="stat-value" id="silver-fluctuation">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p><i class="fas fa-shield-alt"></i> 数据仅供参考，不构成投资建议</p>
+            <div class="footer-links">
+                <a href="https://github.com/sangxiaoyu" target="_blank" class="footer-link">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+                <span class="footer-divider">|</span>
+                <span class="footer-link">
+                    <i class="fas fa-heart"></i> Made by 小榆
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
