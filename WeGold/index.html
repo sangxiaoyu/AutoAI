@@ -26,6 +26,9 @@
                     <span class="status-dot"></span>
                     <span class="status-text">连接中...</span>
                 </div>
+                <div class="data-status" id="data-status">
+                    <span class="status-text">--</span>
+                </div>
                 <div class="update-time">
                     <i class="fas fa-clock"></i>
                     <span id="current-time">--:--:--</span>
@@ -282,91 +285,86 @@
             </div>
         </section>
 
-        <!-- Cross Pairs -->
-        <section class="cross-pairs">
+        <!-- Trading Signals -->
+        <section class="trading-signals">
             <div class="section-title">
-                <h2><i class="fas fa-exchange-alt"></i> 交叉盘</h2>
+                <h2><i class="fas fa-bell"></i> 交易信号</h2>
+                <span class="signal-timeframe">1小时维度</span>
             </div>
-            <div class="pairs-grid" id="pairs-grid">
-                <!-- Dynamic pairs will be inserted here -->
-            </div>
-        </section>
-
-        <!-- Market Analysis -->
-        <section class="market-analysis">
-            <div class="section-title">
-                <h2><i class="fas fa-magnifying-glass-chart"></i> 市场分析</h2>
-            </div>
-            <div class="analysis-cards">
-                <div class="analysis-card">
-                    <div class="analysis-header">
-                        <i class="fas fa-fire"></i>
-                        <h3>波动率分析</h3>
+            <div class="signals-grid">
+                <!-- Gold Trading Signal -->
+                <div class="signal-card gold-signal" id="gold-signal">
+                    <div class="signal-header">
+                        <span class="signal-symbol gold-icon">XAU</span>
+                        <span class="signal-name">黄金/美元</span>
                     </div>
-                    <div class="analysis-content">
-                        <div class="volatility-meter">
-                            <div class="meter-label">
-                                <span>低</span>
-                                <span>波动率</span>
-                                <span>高</span>
-                            </div>
-                            <div class="meter-track">
-                                <div class="meter-fill" id="volatility-fill"></div>
-                                <div class="meter-pointer" id="volatility-pointer"></div>
-                            </div>
-                            <div class="volatility-value" id="volatility-value">--%</div>
+                    <div class="signal-main">
+                        <div class="signal-action" id="gold-action">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>分析中...</span>
                         </div>
-                        <div class="volatility-desc" id="volatility-desc">
-                            正在计算波动率...
+                        <div class="signal-price" id="gold-price">--</div>
+                    </div>
+                    <div class="signal-details">
+                        <div class="detail-row">
+                            <span class="detail-label">建议方向</span>
+                            <span class="detail-value" id="gold-direction">--</span>
                         </div>
+                        <div class="detail-row">
+                            <span class="detail-label">止损位</span>
+                            <span class="detail-value stop-loss" id="gold-stop">--</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">止盈位</span>
+                            <span class="detail-value take-profit" id="gold-target">--</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">风险/收益</span>
+                            <span class="detail-value" id="gold-risk">--</span>
+                        </div>
+                    </div>
+                    <div class="signal-indicators">
+                        <div class="indicator-badge" id="gold-macd">MACD: --</div>
+                        <div class="indicator-badge" id="gold-rsi">RSI: --</div>
+                        <div class="indicator-badge" id="gold-trend">趋势: --</div>
                     </div>
                 </div>
 
-                <div class="analysis-card">
-                    <div class="analysis-header">
-                        <i class="fas fa-arrows-alt-h"></i>
-                        <h3>金银联动</h3>
+                <!-- Silver Trading Signal -->
+                <div class="signal-card silver-signal" id="silver-signal">
+                    <div class="signal-header">
+                        <span class="signal-symbol silver-icon">XAG</span>
+                        <span class="signal-name">白银/美元</span>
                     </div>
-                    <div class="analysis-content">
-                        <div class="correlation-display">
-                            <div class="correlation-value" id="correlation-value">--</div>
-                            <div class="correlation-label">相关性系数</div>
+                    <div class="signal-main">
+                        <div class="signal-action" id="silver-action">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>分析中...</span>
                         </div>
-                        <div class="correlation-bar">
-                            <div class="c-bar negative" id="c-bar-neg"></div>
-                            <div class="c-bar positive" id="c-bar-pos"></div>
-                            <div class="c-pointer" id="c-pointer"></div>
+                        <div class="signal-price" id="silver-price">--</div>
+                    </div>
+                    <div class="signal-details">
+                        <div class="detail-row">
+                            <span class="detail-label">建议方向</span>
+                            <span class="detail-value" id="silver-direction">--</span>
                         </div>
-                        <div class="correlation-desc" id="correlation-desc">
-                            正在计算相关性...
+                        <div class="detail-row">
+                            <span class="detail-label">止损位</span>
+                            <span class="detail-value stop-loss" id="silver-stop">--</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">止盈位</span>
+                            <span class="detail-value take-profit" id="silver-target">--</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">风险/收益</span>
+                            <span class="detail-value" id="silver-risk">--</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="analysis-card">
-                    <div class="analysis-header">
-                        <i class="fas fa-clock-rotate-left"></i>
-                        <h3>24小时统计</h3>
-                    </div>
-                    <div class="analysis-content">
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-label">黄金范围</div>
-                                <div class="stat-value gold-text" id="gold-range">--</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">白银范围</div>
-                                <div class="stat-value silver-text" id="silver-range">--</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">黄金波动</div>
-                                <div class="stat-value" id="gold-fluctuation">--</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">白银波动</div>
-                                <div class="stat-value" id="silver-fluctuation">--</div>
-                            </div>
-                        </div>
+                    <div class="signal-indicators">
+                        <div class="indicator-badge" id="silver-macd">MACD: --</div>
+                        <div class="indicator-badge" id="silver-rsi">RSI: --</div>
+                        <div class="indicator-badge" id="silver-trend">趋势: --</div>
                     </div>
                 </div>
             </div>
@@ -388,66 +386,10 @@
     </div>
 
     <!-- Visit Counter Float -->
-    <div class="visit-counter-float" id="visit-counter" title="点击查看访问详情">
+    <div class="visit-counter-float" id="visit-counter">
         <i class="fas fa-eye"></i>
         <span id="visit-total">0</span>
         <span class="visit-label">次访问</span>
-    </div>
-
-    <!-- Visit Details Modal -->
-    <div class="modal-overlay" id="visit-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-chart-bar"></i> 访问统计汇总</h3>
-                <button class="modal-close" id="close-visit-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="summary-stats">
-                    <div class="summary-item">
-                        <div class="summary-icon"><i class="fas fa-eye"></i></div>
-                        <div class="summary-info">
-                            <div class="summary-value" id="modal-total">0</div>
-                            <div class="summary-label">总访问次数</div>
-                        </div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-icon"><i class="fas fa-users"></i></div>
-                        <div class="summary-info">
-                            <div class="summary-value" id="modal-unique-ip">0</div>
-                            <div class="summary-label">独立IP数</div>
-                        </div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-icon"><i class="fas fa-calendar-day"></i></div>
-                        <div class="summary-info">
-                            <div class="summary-value" id="modal-days">0</div>
-                            <div class="summary-label">访问天数</div>
-                        </div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-icon"><i class="fas fa-globe"></i></div>
-                        <div class="summary-info">
-                            <div class="summary-value" id="modal-your-ip">--</div>
-                            <div class="summary-label">您的IP</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="visit-records-list">
-                    <h4><i class="fas fa-list"></i> 访问记录</h4>
-                    <div class="records-container" id="visit-records-list">
-                        <div class="loading">加载中...</div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-export" id="export-visits">
-                    <i class="fas fa-download"></i> 导出记录
-                </button>
-                <button class="btn-clear" id="clear-visits">
-                    <i class="fas fa-trash"></i> 清空记录
-                </button>
-            </div>
-        </div>
     </div>
 
     <!-- Toast -->

@@ -17,37 +17,18 @@ const SYMBOLS = {
     XAGUSD: { region: 'GB', code: 'XAGUSD', name: '白银/美元', type: 'silver', open: null, high: null, low: null }
 };
 
-// 交叉盘品种
-const CROSS_PAIRS = {
-    'XAU/XAG': { 
-        name: '金银比', 
-        desc: '黄金/白银比率',
-        base: 'XAUUSD', 
-        quote: 'XAGUSD',
-        value: null,
-        history: []
-    },
-    'XAU/EUR': { 
-        name: '黄金/欧元', 
-        desc: 'XAU对EUR汇率',
-        base: 'XAUUSD',
-        quote: null, // 需要EURUSD数据
-        value: null,
-        history: []
-    },
-    'XAG/EUR': { 
-        name: '白银/欧元', 
-        desc: 'XAG对EUR汇率',
-        base: 'XAGUSD',
-        quote: null,
-        value: null,
-        history: []
-    }
-};
-
 // 状态管理
 let pollInterval = null;
 let reconnectAttempts = 0;
+
+// ===== 公共缓存（防止429限流） =====
+const publicCache = {
+    data: {},      // 存储各品种最后成功的数据
+    timestamp: 0,  // 最后成功获取数据的时间
+    isStale: false // 是否使用过期数据
+};
+let rateLimitBackoff = 1; // 退避时间（分钟）
+const MAX_BACKOFF = 30;   // 最大退避时间
 let priceHistory = {
     XAUUSD: [],
     XAGUSD: []
@@ -71,13 +52,21 @@ const priceCache = {
 const CACHE_DURATION = 600000; // 缓存有效期 10 分钟 (600秒)
 const STORAGE_KEY = 'goldSilver_cache';
 
-// ==================== 访问统计模块 (IndexedDB 存储) ====================
+// ==================== 访问统计模块 (汇总统计) ====================
 
 const DB_NAME = 'GoldSilverDB';
-const DB_VERSION = 2; // 版本升级
-const STORE_NAME = 'visits';
-const SETTINGS_STORE = 'settings';
+const DB_VERSION = 3; // 版本升级
+const STATS_STORE = 'stats'; // 汇总统计存储
 let db = null;
+
+// 访问汇总数据结构
+const visitStats = {
+    totalVisits: 0,      // 总访问次数
+    todayVisits: 0,       // 今日访问次数
+    uniqueIPs: 0,         // 唯一IP数
+    lastVisit: null,      // 最后访问时间
+    ipSet: new Set()      // IP集合
+};
 
 // 打开 IndexedDB
 function openDB() {
@@ -97,13 +86,10 @@ function openDB() {
         
         request.onupgradeneeded = (event) => {
             const database = event.target.result;
-            if (!database.objectStoreNames.contains(STORE_NAME)) {
-                database.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                console.log('[DB] 访问记录存储已创建');
-            }
-            if (!database.objectStoreNames.contains(SETTINGS_STORE)) {
-                database.createObjectStore(SETTINGS_STORE, { keyPath: 'key' });
-                console.log('[DB] 设置存储已创建');
+            // 创建汇总统计存储
+            if (!database.objectStoreNames.contains(STATS_STORE)) {
+                database.createObjectStore(STATS_STORE, { keyPath: 'id' });
+                console.log('[DB] 汇总统计存储已创建');
             }
         };
     });
@@ -116,14 +102,8 @@ async function checkVersion() {
         
         if (storedVersion !== APP_VERSION) {
             console.log(`[版本] 检测到版本更新: ${storedVersion} -> ${APP_VERSION}`);
-            
-            // 清除旧缓存
             await clearOldCache();
-            
-            // 保存新版本号
             localStorage.setItem(VERSION_KEY, APP_VERSION);
-            
-            // 提示用户
             showToast(`检测到新版本 ${APP_VERSION}，缓存已更新`, 'info');
         }
     } catch (error) {
@@ -134,126 +114,148 @@ async function checkVersion() {
 // 清除旧缓存
 async function clearOldCache() {
     try {
-        // 清除旧版localStorage缓存
         localStorage.removeItem('goldSilver_cache');
         localStorage.removeItem('goldSilver_stats');
+        // 删除旧数据库
+        indexedDB.deleteDatabase('GoldSilverDB');
         console.log('[缓存] 旧缓存已清除');
     } catch (e) {
         console.error('[缓存] 清除失败:', e);
     }
 }
 
-// 添加访问记录到 IndexedDB
-function addVisitRecord(record) {
+// 保存汇总统计
+function saveStats() {
     return new Promise((resolve, reject) => {
         if (!db) {
             reject(new Error('数据库未初始化'));
             return;
         }
         
-        const transaction = db.transaction([STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.add(record);
+        const transaction = db.transaction([STATS_STORE], 'readwrite');
+        const store = transaction.objectStore(STATS_STORE);
+        const stats = {
+            id: 'main',
+            totalVisits: visitStats.totalVisits,
+            todayVisits: visitStats.todayVisits,
+            uniqueIPs: visitStats.ipSet.size,
+            lastVisit: visitStats.lastVisit,
+            lastUpdated: new Date().toISOString()
+        };
+        const request = store.put(stats);
         
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
     });
 }
 
-// 获取所有访问记录
-function getAllVisits() {
-    return new Promise((resolve, reject) => {
-        if (!db) {
-            reject(new Error('数据库未初始化'));
-            return;
-        }
-        
-        const transaction = db.transaction([STORE_NAME], 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.getAll();
-        
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-// 检查记录是否存在
-function visitExists(id) {
+// 加载汇总统计
+async function loadStats() {
     return new Promise((resolve, reject) => {
         if (!db) {
             resolve(false);
             return;
         }
         
-        const transaction = db.transaction([STORE_NAME], 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.get(id);
+        const transaction = db.transaction([STATS_STORE], 'readonly');
+        const store = transaction.objectStore(STATS_STORE);
+        const request = store.get('main');
         
-        request.onsuccess = () => resolve(!!request.result);
+        request.onsuccess = () => {
+            const stats = request.result;
+            if (stats) {
+                visitStats.totalVisits = stats.totalVisits || 0;
+                visitStats.todayVisits = stats.todayVisits || 0;
+                visitStats.lastVisit = stats.lastVisit;
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        };
         request.onerror = () => reject(request.error);
     });
 }
 
-// 获取记录总数
-function getVisitCount() {
-    return new Promise((resolve, reject) => {
+// 获取今日日期字符串
+function getTodayStr() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+// 检查是否是该时段首次访问（同一IP-小时不重复计数）
+async function isTodayFirstAccess(ip) {
+    const todayStr = getTodayStr();
+    const hour = new Date().getHours().toString().padStart(2, '0');
+    const hourlyKey = `hourly-${ip}-${todayStr}-${hour}`;
+    
+    return new Promise((resolve) => {
         if (!db) {
-            resolve(0);
+            resolve(true);
             return;
         }
-        
-        const transaction = db.transaction([STORE_NAME], 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.count();
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        const transaction = db.transaction([STATS_STORE], 'readonly');
+        const store = transaction.objectStore(STATS_STORE);
+        const request = store.get(hourlyKey);
+        request.onsuccess = () => resolve(!request.result);
+        request.onerror = () => resolve(true);
     });
 }
 
-// 获取当前时段标识
-function getTimeSlotId(ip) {
-    const now = new Date();
-    const date = now.toISOString().slice(0, 10);
-    const hour = now.getHours().toString().padStart(2, '0');
-    return `${ip || 'unknown'}-${date}-${hour}`;
+// 标记该时段已访问
+function markHourlyAccess(ip) {
+    const todayStr = getTodayStr();
+    const hour = new Date().getHours().toString().padStart(2, '0');
+    const todayKey = `${ip}-${todayStr}-${hour}`;
+    
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            resolve();
+            return;
+        }
+        const transaction = db.transaction([STATS_STORE], 'readwrite');
+        const store = transaction.objectStore(STATS_STORE);
+        const request = store.put({
+            id: `hourly-${todayKey}`,
+            timestamp: new Date().toISOString()
+        });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
 }
 
 // 初始化访问统计
 async function initVisitStats() {
     try {
-        // 检查版本（可能清除旧缓存）
         await checkVersion();
-        
-        // 打开数据库
         await openDB();
+        
+        // 加载已有统计
+        await loadStats();
         
         // 获取用户IP
         const ip = await fetchUserIP();
         
         // 检查该时段是否已有记录
-        const slotId = getTimeSlotId(ip);
-        const exists = await visitExists(slotId);
+        const isFirst = await isTodayFirstAccess(ip);
         
-        if (exists) {
-            console.log('[访问] 该时段已有记录，跳过:', slotId);
-        } else {
-            // 创建新记录
-            const now = new Date();
-            const record = {
-                id: slotId,
-                ip: ip,
-                time: now.toISOString(),
-                displayTime: now.toLocaleString('zh-CN'),
-                goldPrice: priceCache.XAUUSD?.price || null,
-                silverPrice: priceCache.XAGUSD?.price || null
-            };
+        if (isFirst) {
+            // 更新统计
+            visitStats.totalVisits++;
+            visitStats.todayVisits++;
+            visitStats.lastVisit = new Date().toISOString();
             
-            await addVisitRecord(record);
-            console.log('[访问] 新记录已保存:', slotId);
+            // 记录唯一IP
+            if (!visitStats.ipSet.has(ip)) {
+                visitStats.ipSet.add(ip);
+            }
+            
+            // 保存到数据库
+            await saveStats();
+            await markHourlyAccess(ip);
+            
+            console.log('[访问] 统计已更新 - 总访问:', visitStats.totalVisits, '今日:', visitStats.todayVisits);
         }
         
-        // 更新计数器
+        // 更新计数器显示
         updateVisitCounter();
         
     } catch (error) {
@@ -289,25 +291,27 @@ async function fetchUserIP() {
 }
 
 // 更新悬浮计数器
-async function updateVisitCounter() {
-    try {
-        const count = await getVisitCount();
-        const counter = document.getElementById('visit-total');
-        if (counter) {
-            counter.textContent = count;
-        }
-    } catch (error) {
-        console.error('[访问] 更新计数器失败:', error);
+function updateVisitCounter() {
+    const counter = document.getElementById('visit-total');
+    if (counter) {
+        counter.textContent = visitStats.totalVisits;
     }
+}
+
+// 获取统计数据
+function getStats() {
+    return {
+        totalVisits: visitStats.totalVisits,
+        todayVisits: visitStats.todayVisits,
+        uniqueIPs: visitStats.ipSet.size,
+        lastVisit: visitStats.lastVisit
+    };
 }
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
     // 初始化访问统计（独立于其他初始化）
     initVisitStats();
-    
-    // 初始化弹窗功能
-    initVisitModal();
     
     initUI();
     connectAPI();
@@ -390,66 +394,6 @@ function initUI() {
         });
     });
 
-    // 初始化交叉盘
-    initCrossPairs();
-}
-
-// 初始化交叉盘
-function initCrossPairs() {
-    const grid = document.getElementById('pairs-grid');
-    grid.innerHTML = ''; // 清空现有内容
-    
-    // 遍历交叉盘配置
-    Object.keys(CROSS_PAIRS).forEach(pairKey => {
-        const pair = CROSS_PAIRS[pairKey];
-        
-        const div = document.createElement('div');
-        div.className = 'pair-card';
-        div.id = `pair-${pairKey}`;
-        div.innerHTML = `
-            <div class="pair-header">
-                <span class="pair-name">${pair.name}</span>
-                <span class="pair-badge">${pair.desc}</span>
-            </div>
-            <div class="pair-value" id="value-${pairKey}">
-                <span class="value-number">--</span>
-                <span class="value-change up" id="change-${pairKey}">--</span>
-            </div>
-            <div class="pair-chart" id="mini-chart-${pairKey}"></div>
-        `;
-        grid.appendChild(div);
-    });
-    
-    // 添加 SYMBOLS 中的直接报价
-    Object.keys(SYMBOLS).forEach(symbol => {
-        const info = SYMBOLS[symbol];
-        if (!info || !info.name) return;
-        
-        const div = document.createElement('div');
-        div.className = `pair-card ${info.type === 'gold' ? 'gold-card' : 'silver-card'}`;
-        div.id = `pair-direct-${symbol}`;
-        div.innerHTML = `
-            <div class="pair-header">
-                <span class="pair-name">${info.name}</span>
-                <span class="pair-tag ${info.type}">${info.type === 'gold' ? 'AU' : 'AG'}</span>
-            </div>
-            <div class="pair-value" id="price-direct-${symbol}">
-                <span class="value-number">--</span>
-                <span class="value-change up" id="change-direct-${symbol}">--</span>
-            </div>
-            <div class="pair-highlow">
-                <div class="hl-item">
-                    <span class="hl-label">高</span>
-                    <span class="hl-value high" id="high-direct-${symbol}">--</span>
-                </div>
-                <div class="hl-item">
-                    <span class="hl-label">低</span>
-                    <span class="hl-value low" id="low-direct-${symbol}">--</span>
-                </div>
-            </div>
-        `;
-        grid.appendChild(div);
-    });
 }
 
 // ==================== localStorage 缓存管理 ====================
@@ -649,14 +593,33 @@ async function fetchTickData(symbol, forceRefresh = false) {
         
         if (!response.ok) {
             if (response.status === 429) {
-                console.warn(`[${symbol}] 请求过于频繁，使用缓存`);
-                if (cached.price !== null) {
+                console.warn(`[${symbol}] 请求过于频繁(429)，使用公共缓存`);
+                
+                // 增加退避时间
+                rateLimitBackoff = Math.min(rateLimitBackoff * 2, MAX_BACKOFF);
+                console.warn(`[${symbol}] 退避时间调整为: ${rateLimitBackoff}分钟`);
+                
+                // 延迟递减退避时间
+                const backoffInterval = setInterval(() => {
+                    rateLimitBackoff = Math.max(1, rateLimitBackoff - 1);
+                    updateDataStatus('backoff', rateLimitBackoff);
+                    if (rateLimitBackoff <= 1) {
+                        clearInterval(backoffInterval);
+                        console.log('[退避] 已恢复正常轮询');
+                    }
+                }, 60000); // 每分钟递减
+                
+                // 使用公共缓存数据
+                if (publicCache.data[symbol]) {
+                    const cached = publicCache.data[symbol];
                     handleQuote({
                         s: symbol,
                         ld: cached.price,
-                        t: cached.time,
+                        t: cached.timestamp,
                         v: 0
                     }, false);
+                    publicCache.isStale = true;
+                    updateDataStatus('stale');
                 }
                 return;
             }
@@ -670,12 +633,25 @@ async function fetchTickData(symbol, forceRefresh = false) {
             const data = json.data;
             // 更新缓存
             priceCache[symbol] = { price: data.ld, time: now };
+            
+            // 更新公共缓存
+            publicCache.data[symbol] = { price: data.ld, timestamp: now };
+            publicCache.timestamp = now;
+            publicCache.isStale = false;
+            
+            // 重置退避时间
+            if (rateLimitBackoff > 1) {
+                rateLimitBackoff = 1;
+                console.log('[限流] 已恢复正常');
+            }
+            
             handleQuote({
                 s: data.s,           // 标的代码
                 ld: data.ld,         // 最新成交价
                 t: data.t,           // 时间戳
                 v: data.v            // 成交量
             }, true);
+            updateDataStatus('live');
         } else {
             console.warn(`[${symbol}] API 返回错误:`, json.msg);
         }
@@ -694,8 +670,15 @@ async function fetchTickData(symbol, forceRefresh = false) {
     }
 }
 
-// 轮询获取最新数据
+// 轮询获取最新数据（增加退避机制）
 async function pollData() {
+    // 如果处于退避期，跳过本次轮询
+    if (rateLimitBackoff > 1) {
+        console.log(`[轮询] 处于退避期(${rateLimitBackoff}分钟)，跳过`);
+        updateDataStatus('caching', rateLimitBackoff);
+        return;
+    }
+    
     try {
         const promises = Object.keys(SYMBOLS).map(symbol => fetchTickData(symbol, true)); // 轮询时强制刷新
         await Promise.all(promises);
@@ -710,8 +693,8 @@ function startPolling() {
     if (pollInterval) {
         clearInterval(pollInterval);
     }
-    // 每15秒轮询一次 (避免触发 429 限流)
-    pollInterval = setInterval(pollData, 15000);
+    // 每30秒轮询一次 (避免触发 429 限流)
+    pollInterval = setInterval(pollData, 30000);
 }
 
 // 页面卸载前保存缓存
@@ -760,9 +743,6 @@ function handleQuote(data, updateCache = true) {
     
     // 更新界面
     updatePriceDisplay(symbol, price, change, changePercent, volume, open, high, low);
-    
-    // 更新交叉盘
-    updateCrossPairs(symbol, price, open, high, low);
     
     // 执行技术分析
     runTechnicalAnalysis(symbol);
@@ -825,81 +805,6 @@ function updatePriceDisplay(symbol, price, change, changePercent, volume, open, 
         });
         if (priceHistory[symbol].length > 100) {
             priceHistory[symbol].shift();
-        }
-    }
-}
-
-// 更新交叉盘显示
-function updateCrossPairs(symbol, price, open, high, low) {
-    // 更新直接报价卡片
-    const directPriceEl = document.getElementById(`price-direct-${symbol}`);
-    const directChangeEl = document.getElementById(`change-direct-${symbol}`);
-    const directHighEl = document.getElementById(`high-direct-${symbol}`);
-    const directLowEl = document.getElementById(`low-direct-${symbol}`);
-    
-    if (directPriceEl) {
-        const decimals = price > 100 ? 2 : (price > 10 ? 3 : 4);
-        directPriceEl.querySelector('.value-number').textContent = price.toFixed(decimals);
-    }
-    
-    if (directChangeEl) {
-        const change = price - open;
-        const changePercent = open > 0 ? (change / open) * 100 : 0;
-        const isUp = change >= 0;
-        const sign = isUp ? '+' : '';
-        directChangeEl.className = `value-change ${isUp ? 'up' : 'down'}`;
-        directChangeEl.textContent = `${sign}${changePercent.toFixed(2)}%`;
-    }
-    
-    if (directHighEl) directHighEl.textContent = high?.toFixed(2) || '--';
-    if (directLowEl) directLowEl.textContent = low?.toFixed(2) || '--';
-    
-    // 更新金银比
-    const gold = SYMBOLS.XAUUSD;
-    const silver = SYMBOLS.XAGUSD;
-    
-    // 计算金银比
-    if (gold.open && silver.open) {
-        const ratio = gold.open / silver.open;
-        CROSS_PAIRS['XAU/XAG'].value = ratio;
-        CROSS_PAIRS['XAU/XAG'].history.push({ value: ratio, time: Date.now() });
-        if (CROSS_PAIRS['XAU/XAG'].history.length > 50) {
-            CROSS_PAIRS['XAU/XAG'].history.shift();
-        }
-        
-        // 更新金银比显示
-        const ratioValueEl = document.getElementById('value-XAU/XAG');
-        const ratioChangeEl = document.getElementById('change-XAU/XAG');
-        
-        if (ratioValueEl) {
-            ratioValueEl.querySelector('.value-number').textContent = ratio.toFixed(2);
-        }
-        
-        // 金银比历史变化
-        const history = CROSS_PAIRS['XAU/XAG'].history;
-        if (history.length >= 2) {
-            const prevRatio = history[history.length - 2].value;
-            const ratioChange = ((ratio - prevRatio) / prevRatio) * 100;
-            if (ratioChangeEl) {
-                const isUp = ratioChange >= 0;
-                const sign = isUp ? '+' : '';
-                ratioChangeEl.className = `value-change ${isUp ? 'up' : 'down'}`;
-                ratioChangeEl.textContent = `${sign}${ratioChange.toFixed(2)}%`;
-            }
-        }
-    }
-    
-    // 更新技术分析界面的金银比
-    const ratioEl = document.getElementById('price-ratio');
-    const ratioBar = document.getElementById('ratio-bar');
-    
-    if (gold.open && silver.open && ratioEl) {
-        const currentRatio = gold.open / silver.open;
-        ratioEl.textContent = currentRatio.toFixed(2);
-        
-        if (ratioBar) {
-            const position = Math.min(95, Math.max(5, ((currentRatio - 70) / 20) * 100));
-            ratioBar.style.left = `${position}%`;
         }
     }
 }
@@ -1131,10 +1036,195 @@ function runTechnicalAnalysis(symbol) {
     // 保存技术分析数据
     technicalData[symbol] = dataObj;
     
+    // 更新交易信号界面
+    updateTradingSignal(symbol, dataObj);
+    
     // 如果是当前选中品种，更新界面
     if (symbol === currentSymbol) {
         updateTechnicalUI(symbol, dataObj);
     }
+}
+
+// 更新交易信号界面
+function updateTradingSignal(symbol, data) {
+    const { rsi, macd, currentPrice, resistance, support, shortTrend, midTrend, longTrend, confidence } = data;
+    const prefix = symbol === 'XAUUSD' ? 'gold' : 'silver';
+    
+    // 更新价格
+    const priceEl = document.getElementById(`${prefix}-price`);
+    if (priceEl) priceEl.textContent = currentPrice ? currentPrice.toFixed(2) : '--';
+    
+    // 计算综合信号
+    const signal = calculateTradingSignal(symbol, data);
+    
+    // 更新信号主区域
+    const actionEl = document.getElementById(`${prefix}-action`);
+    if (actionEl) {
+        actionEl.innerHTML = `
+            <i class="fas ${signal.icon}"></i>
+            <span>${signal.action}</span>
+        `;
+        actionEl.className = `signal-action ${signal.class}`;
+    }
+    
+    // 更新方向
+    const dirEl = document.getElementById(`${prefix}-direction`);
+    if (dirEl) {
+        dirEl.textContent = signal.direction;
+        dirEl.className = `detail-value ${signal.dirClass}`;
+    }
+    
+    // 更新止损止盈
+    const stopEl = document.getElementById(`${prefix}-stop`);
+    const targetEl = document.getElementById(`${prefix}-target`);
+    if (stopEl) stopEl.textContent = signal.stopLoss || '--';
+    if (targetEl) targetEl.textContent = signal.takeProfit || '--';
+    
+    // 更新风险收益比
+    const riskEl = document.getElementById(`${prefix}-risk`);
+    if (riskEl) riskEl.textContent = signal.riskReward || '--';
+    
+    // 更新指标徽章
+    const macdEl = document.getElementById(`${prefix}-macd`);
+    const rsiEl = document.getElementById(`${prefix}-rsi`);
+    const trendEl = document.getElementById(`${prefix}-trend`);
+    
+    if (macdEl) {
+        const macdSignal = macd?.histogram > 0 ? '多头' : '空头';
+        macdEl.textContent = `MACD: ${macdSignal}`;
+        macdEl.className = `indicator-badge ${macd?.histogram > 0 ? 'bullish' : 'bearish'}`;
+    }
+    if (rsiEl) {
+        let rsiStatus = '中性';
+        if (rsi > 70) rsiStatus = '超买';
+        else if (rsi < 30) rsiStatus = '超卖';
+        else if (rsi > 55) rsiStatus = '偏多';
+        else if (rsi < 45) rsiStatus = '偏空';
+        rsiEl.textContent = `RSI: ${rsi?.toFixed(0) || '--'} (${rsiStatus})`;
+    }
+    if (trendEl) {
+        const trend = (shortTrend === midTrend && midTrend === longTrend) ? longTrend : 
+                      (shortTrend === midTrend) ? shortTrend : 
+                      (midTrend === longTrend) ? midTrend : '震荡';
+        trendEl.textContent = `趋势: ${trend}`;
+        trendEl.className = `indicator-badge ${trend === '上涨' ? 'bullish' : trend === '下跌' ? 'bearish' : ''}`;
+    }
+}
+
+// 计算交易信号
+function calculateTradingSignal(symbol, data) {
+    const { rsi, macd, currentPrice, resistance, support, shortTrend, midTrend, longTrend, confidence } = data;
+    
+    // 止损止盈距离（根据波动率计算）
+    const atr = resistance && support ? (resistance - support) / 2 : currentPrice * 0.005;
+    const stopDistance = Math.max(atr, currentPrice * 0.003);
+    const targetDistance = stopDistance * 1.5; // 1:1.5 风险收益比
+    
+    // 计算各指标得分
+    let score = 0;
+    let reasons = [];
+    
+    // 1. MACD 信号 (权重3)
+    if (macd) {
+        if (macd.histogram > 0) {
+            score += 3;
+            reasons.push('MACD多头');
+        } else {
+            score -= 3;
+            reasons.push('MACD空头');
+        }
+    }
+    
+    // 2. RSI 信号 (权重2)
+    if (rsi) {
+        if (rsi > 60) {
+            score += 2;
+            reasons.push('RSI偏强');
+        } else if (rsi < 40) {
+            score -= 2;
+            reasons.push('RSI偏弱');
+        } else if (rsi > 70) {
+            score -= 1; // 超买减分
+        } else if (rsi < 30) {
+            score += 1; // 超卖加分
+        }
+    }
+    
+    // 3. 趋势信号 (权重4)
+    const stableTrends = [shortTrend, midTrend, longTrend].filter(t => t !== '震荡').length;
+    if (stableTrends >= 2) {
+        if (shortTrend === '上涨' && midTrend === '上涨') {
+            score += 4;
+            reasons.push('短中期看涨');
+        } else if (shortTrend === '下跌' && midTrend === '下跌') {
+            score -= 4;
+            reasons.push('短中期看跌');
+        }
+    }
+    
+    // 4. 长期趋势 (权重3)
+    if (longTrend === '上涨') {
+        score += 3;
+        reasons.push('长期看涨');
+    } else if (longTrend === '下跌') {
+        score -= 3;
+        reasons.push('长期看跌');
+    }
+    
+    // 判断信号
+    let action = '观望';
+    let signalClass = 'neutral';
+    let direction = '--';
+    let icon = 'fa-minus';
+    let stopLoss = null;
+    let takeProfit = null;
+    
+    // 至少需要3个有效指标才能给出信号
+    if (reasons.length >= 2 && confidence >= 50) {
+        if (score >= 5) {
+            action = '买入信号';
+            signalClass = 'buy';
+            direction = '做多';
+            icon = 'fa-arrow-up';
+            stopLoss = (currentPrice - stopDistance).toFixed(2);
+            takeProfit = (currentPrice + targetDistance).toFixed(2);
+        } else if (score <= -5) {
+            action = '卖出信号';
+            signalClass = 'sell';
+            direction = '做空';
+            icon = 'fa-arrow-down';
+            stopLoss = (currentPrice + stopDistance).toFixed(2);
+            takeProfit = (currentPrice - targetDistance).toFixed(2);
+        } else if (score > 0) {
+            action = '谨慎买入';
+            signalClass = 'caution';
+            direction = '观望偏多';
+            icon = 'fa-exclamation';
+        } else if (score < 0) {
+            action = '谨慎卖出';
+            signalClass = 'caution';
+            direction = '观望偏空';
+            icon = 'fa-exclamation';
+        }
+    }
+    
+    // 风险收益比
+    let riskReward = '--';
+    if (stopLoss && takeProfit) {
+        riskReward = '1:1.5';
+    }
+    
+    return {
+        action,
+        signalClass,
+        direction,
+        icon,
+        stopLoss,
+        takeProfit,
+        riskReward,
+        score,
+        reasons: reasons.slice(0, 3)
+    };
 }
 
 // 更新技术分析界面
@@ -1527,6 +1617,35 @@ function updateConnectionStatus(status) {
     }
 }
 
+// 更新数据状态（实时/缓存/退避）
+function updateDataStatus(status, detail = 0) {
+    const statusEl = document.getElementById('data-status');
+    if (!statusEl) return;
+    
+    const text = statusEl.querySelector('.status-text');
+    if (!text) return;
+    
+    switch (status) {
+        case 'live':
+            text.textContent = '实时';
+            text.className = 'status-text live';
+            break;
+        case 'caching':
+        case 'backoff':
+            text.textContent = `缓存(${detail}分钟)`;
+            text.className = 'status-text cached';
+            break;
+        case 'stale':
+            text.textContent = '数据过期';
+            text.className = 'status-text stale';
+            break;
+        case 'error':
+            text.textContent = '获取失败';
+            text.className = 'status-text error';
+            break;
+    }
+}
+
 // Toast 提示
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
@@ -1536,164 +1655,4 @@ function showToast(message, type = 'info') {
     toast.innerHTML = `<i class="fas ${icons[type]}"></i>${message}`;
     toast.className = `toast ${type} show`;
     setTimeout(() => toast.classList.remove('show'), 3000);
-}
-
-// ==================== 访问统计弹窗功能 ====================
-
-// 初始化弹窗
-function initVisitModal() {
-    const counter = document.getElementById('visit-counter');
-    const modal = document.getElementById('visit-modal');
-    const closeBtn = document.getElementById('close-visit-modal');
-    const exportBtn = document.getElementById('export-visits');
-    const clearBtn = document.getElementById('clear-visits');
-    
-    if (!counter || !modal) return;
-    
-    // 点击计数器打开弹窗
-    counter.addEventListener('click', async () => {
-        modal.classList.add('show');
-        await loadVisitDetails();
-    });
-    
-    // 点击关闭按钮
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            modal.classList.remove('show');
-        });
-    }
-    
-    // 点击背景关闭
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.classList.remove('show');
-        }
-    });
-    
-    // 导出记录
-    if (exportBtn) {
-        exportBtn.addEventListener('click', exportVisitRecords);
-    }
-    
-    // 清空记录
-    if (clearBtn) {
-        clearBtn.addEventListener('click', async () => {
-            if (confirm('确定要清空所有访问记录吗？此操作不可恢复！')) {
-                await clearAllVisits();
-                await loadVisitDetails();
-                updateVisitCounter();
-                showToast('访问记录已清空', 'success');
-            }
-        });
-    }
-}
-
-// 加载访问详情
-async function loadVisitDetails() {
-    try {
-        const records = await getAllVisits();
-        const container = document.getElementById('visit-records-list');
-        const modalTotal = document.getElementById('modal-total');
-        const modalUniqueIp = document.getElementById('modal-unique-ip');
-        const modalDays = document.getElementById('modal-days');
-        const modalYourIp = document.getElementById('modal-your-ip');
-        
-        // 统计汇总
-        if (modalTotal) modalTotal.textContent = records.length;
-        
-        // 独立IP数
-        const uniqueIps = new Set(records.map(r => r.ip).filter(ip => ip !== 'unknown'));
-        if (modalUniqueIp) modalUniqueIp.textContent = uniqueIps.size;
-        
-        // 访问天数
-        const uniqueDays = new Set(records.map(r => r.id?.split('-').slice(1, 4).join('-')).filter(Boolean));
-        if (modalDays) modalDays.textContent = uniqueDays.size;
-        
-        // 您的IP
-        if (modalYourIp) modalYourIp.textContent = records[0]?.ip || '获取中...';
-        
-        // 渲染记录列表
-        if (container) {
-            if (records.length === 0) {
-                container.innerHTML = '<div class="empty-records">暂无访问记录</div>';
-            } else {
-                // 按时间倒序排列
-                const sorted = records.sort((a, b) => {
-                    return new Date(b.time) - new Date(a.time);
-                });
-                
-                container.innerHTML = sorted.slice(0, 50).map(record => `
-                    <div class="record-item">
-                        <div class="record-icon">
-                            <i class="fas fa-globe"></i>
-                        </div>
-                        <div class="record-info">
-                            <div class="record-ip">${record.ip || '未知IP'}</div>
-                            <div class="record-time">${record.displayTime || record.time}</div>
-                            ${record.goldPrice ? `<div class="record-price">金: ${record.goldPrice.toFixed(2)} | 银: ${(record.silverPrice || 0).toFixed(2)}</div>` : ''}
-                        </div>
-                    </div>
-                `).join('');
-                
-                if (records.length > 50) {
-                    container.innerHTML += `<div class="records-more">还有 ${records.length - 50} 条记录...</div>`;
-                }
-            }
-        }
-    } catch (error) {
-        console.error('[弹窗] 加载失败:', error);
-        const container = document.getElementById('visit-records-list');
-        if (container) container.innerHTML = '<div class="empty-records">加载失败</div>';
-    }
-}
-
-// 清空所有访问记录
-function clearAllVisits() {
-    return new Promise((resolve, reject) => {
-        if (!db) {
-            resolve();
-            return;
-        }
-        
-        const transaction = db.transaction([STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.clear();
-        
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-    });
-}
-
-// 导出访问记录
-function exportVisitRecords() {
-    getAllVisits().then(records => {
-        if (records.length === 0) {
-            showToast('暂无访问记录可导出', 'info');
-            return;
-        }
-        
-        // 转换为CSV
-        const headers = ['IP', '访问时间', '黄金价格', '白银价格'];
-        const rows = records.map(r => [
-            r.ip || '未知',
-            r.displayTime || r.time,
-            r.goldPrice ? r.goldPrice.toFixed(2) : '-',
-            r.silverPrice ? r.silverPrice.toFixed(2) : '-'
-        ]);
-        
-        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `goldSilver_visits_${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        
-        URL.revokeObjectURL(url);
-        showToast(`已导出 ${records.length} 条记录`, 'success');
-    }).catch(error => {
-        console.error('[导出] 失败:', error);
-        showToast('导出失败', 'error');
-    });
 }

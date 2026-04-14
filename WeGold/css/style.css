@@ -86,6 +86,36 @@ body {
     background: #ef4444;
 }
 
+.data-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.data-status .status-text {
+    color: #94a3b8;
+}
+
+.data-status .status-text.live {
+    color: #10b981;
+}
+
+.data-status .status-text.cached {
+    color: #f59e0b;
+}
+
+.data-status .status-text.stale {
+    color: #ef4444;
+}
+
+.data-status .status-text.error {
+    color: #ef4444;
+}
+
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
@@ -755,20 +785,6 @@ body {
         grid-template-columns: 1fr;
     }
 }
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s;
-}
-
-.tf-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #e4e8ec;
-}
-
-.tf-btn.active {
-    background: #667eea;
-    color: white;
-}
 
 /* ===== Cross Pairs ===== */
 .pairs-grid {
@@ -1183,6 +1199,8 @@ body {
 }
 
 /* ===== Responsive ===== */
+
+/* 大屏幕 - 笔记本 */
 @media (max-width: 1200px) {
     .overview-cards {
         grid-template-columns: repeat(2, 1fr);
@@ -1193,30 +1211,534 @@ body {
     }
 }
 
-@media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
+/* 平板 */
+@media (max-width: 992px) {
+    .container {
+        padding: 0 16px;
     }
-
-    .overview-cards,
+    
+    .header {
+        padding: 16px 0;
+        flex-wrap: wrap;
+    }
+    
+    .header-left {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .logo h1 {
+        font-size: 1.3rem;
+    }
+    
+    .subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .header-right {
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .connection-status,
+    .data-status,
+    .update-time {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+    
+    .overview-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
     .analysis-cards {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
+    
+    .analysis-card {
+        padding: 16px;
+    }
+    
+    .pair-value .value-number {
+        font-size: 1.3rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+    
+    .chart-controls {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .symbol-tabs,
+    .timeframe-tabs {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .tab-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+    
+    .price-details {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .ma-values {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}
 
+/* 手机端 */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 12px;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .header-left {
+        width: 100%;
+    }
+    
+    .header-right {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .logo {
+        justify-content: center;
+    }
+    
+    .logo h1 {
+        font-size: 1.2rem;
+    }
+    
+    .subtitle {
+        display: none;
+    }
+    
+    .section-title {
+        padding-top: 20px;
+    }
+    
+    .section-title h2 {
+        font-size: 1rem;
+    }
+    
+    .section-title .data-source {
+        font-size: 0.7rem;
+    }
+    
+    /* 市场概览 */
+    .overview-cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .pair-card {
+        padding: 16px;
+    }
+    
+    .pair-header {
+        margin-bottom: 12px;
+    }
+    
+    .pair-name {
+        font-size: 0.9rem;
+    }
+    
+    .pair-badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+    
+    .pair-value .value-number {
+        font-size: 1.4rem;
+    }
+    
+    .value-change {
+        font-size: 0.8rem;
+    }
+    
+    .pair-highlow {
+        gap: 10px;
+        padding-top: 10px;
+    }
+    
+    .hl-item {
+        font-size: 0.8rem;
+    }
+    
+    .pair-chart {
+        height: 35px;
+    }
+    
+    /* 分析卡片 */
+    .analysis-cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .analysis-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+    
+    .analysis-header {
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+    }
+    
+    .analysis-header h3 {
+        font-size: 0.9rem;
+    }
+    
+    .volatility-meter {
+        margin-bottom: 12px;
+    }
+    
+    .meter-label {
+        font-size: 0.7rem;
+    }
+    
+    .meter-track {
+        height: 10px;
+    }
+    
+    .volatility-value {
+        font-size: 0.85rem;
+    }
+    
+    /* 趋势分析 */
+    .trend-indicators {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .trend-item {
+        padding: 10px 12px;
+        border-radius: 10px;
+    }
+    
+    .trend-period {
+        font-size: 0.7rem;
+    }
+    
+    .trend-name {
+        font-size: 0.8rem;
+    }
+    
+    .trend-direction {
+        font-size: 0.85rem;
+    }
+    
+    /* 图表区域 */
+    .chart-wrapper {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
     .chart-controls {
         flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
     }
-
+    
     .symbol-tabs,
     .timeframe-tabs {
         width: 100%;
         overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
     }
-
+    
+    .tab-btn {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+    
+    .chart-container {
+        height: 280px;
+    }
+    
+    .chart-placeholder {
+        height: 280px;
+    }
+    
+    /* 价格详情 */
+    .price-section {
+        padding: 16px;
+        border-radius: 12px;
+    }
+    
+    .section-title h2 {
+        font-size: 0.95rem;
+    }
+    
     .price-details {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    .detail-item {
+        padding: 10px;
+        border-radius: 8px;
+    }
+    
+    .detail-label {
+        font-size: 0.7rem;
+    }
+    
+    .detail-value {
+        font-size: 0.9rem;
+    }
+    
+    /* MA 指标 */
+    .ma-values {
+        font-size: 0.7rem;
+        gap: 6px;
+    }
+    
+    .ma-values b {
+        font-size: 0.8rem;
+    }
+    
+    /* 信号列表 */
+    .signals-list {
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .signal-item {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+        border-radius: 8px;
+    }
+    
+    /* 风险信息 */
+    .risk-info {
+        padding: 10px;
+        border-radius: 10px;
+        gap: 6px;
+    }
+    
+    .risk-item {
+        font-size: 0.8rem;
+    }
+    
+    /* 页脚 */
+    .footer {
+        padding: 20px 0;
+    }
+    
+    .footer p {
+        font-size: 0.75rem;
+    }
+    
+    .footer-links {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .footer-link {
+        font-size: 0.75rem;
+    }
+    
+    /* Toast */
+    .toast {
+        bottom: 80px;
+        left: 10px;
+        right: 10px;
+        transform: translateX(0) translateY(100px);
+        padding: 12px 20px;
+        font-size: 0.85rem;
+        text-align: center;
+    }
+    
+    .toast.show {
+        transform: translateX(0) translateY(0);
+    }
+}
+
+/* 小屏手机 */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 10px;
+    }
+    
+    .logo h1 {
+        font-size: 1.1rem;
+    }
+    
+    .logo i {
+        font-size: 1.4rem;
+    }
+    
+    .header-right {
+        gap: 8px;
+    }
+    
+    .connection-status,
+    .data-status {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
+    
+    .update-time {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
+    
+    .update-time i {
+        display: none;
+    }
+    
+    .pair-card {
+        padding: 14px;
+    }
+    
+    .pair-value .value-number {
+        font-size: 1.3rem;
+    }
+    
+    .pair-chart {
+        height: 30px;
+    }
+    
+    .analysis-card {
+        padding: 14px;
+    }
+    
+    .trend-item {
+        padding: 8px 10px;
+    }
+    
+    .trend-direction {
+        font-size: 0.8rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .tab-btn {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
+    
+    .price-details {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .detail-item {
+        padding: 8px;
+    }
+    
+    .detail-label {
+        font-size: 0.65rem;
+    }
+    
+    .detail-value {
+        font-size: 0.85rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+        border-radius: 16px;
+    }
+    
+    .modal-header {
+        padding: 16px;
+    }
+    
+    .modal-header h3 {
+        font-size: 1rem;
+    }
+    
+    .modal-body {
+        padding: 14px;
+        max-height: 55vh;
+    }
+    
+    .summary-stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    
+    .summary-item {
+        padding: 12px;
+        border-radius: 10px;
+    }
+    
+    .summary-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+    
+    .summary-value {
+        font-size: 1.1rem;
+    }
+    
+    .summary-label {
+        font-size: 0.7rem;
+    }
+    
+    .record-item {
+        padding: 10px;
+    }
+    
+    .records-container {
+        max-height: 200px;
+    }
+}
+
+/* 横屏手机 */
+@media (max-height: 500px) and (orientation: landscape) {
+    .header {
+        padding: 10px 0;
+    }
+    
+    .logo h1 {
+        font-size: 1rem;
+    }
+    
+    .subtitle {
+        display: none;
+    }
+    
+    .chart-container {
+        height: 200px;
+    }
+    
+    .modal-content {
+        max-height: 85vh;
+    }
+    
+    .modal-body {
+        max-height: 50vh;
+    }
+    
+    .visit-counter-float {
+        bottom: 10px;
+        right: 10px;
+        padding: 6px 12px;
     }
 }
 
@@ -1275,270 +1797,232 @@ body {
     }
 }
 
-/* ===== Visit Modal ===== */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
+/* ===== Trading Signals ===== */
+.trading-signals {
+    margin-top: 30px;
 }
 
-.modal-overlay.show {
-    opacity: 1;
-    visibility: visible;
-}
-
-.modal-content {
-    background: linear-gradient(145deg, #1e2332, #141824);
-    border: 1px solid rgba(255, 215, 0, 0.2);
-    border-radius: 20px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow: hidden;
-    transform: scale(0.9);
-    transition: transform 0.3s ease;
-}
-
-.modal-overlay.show .modal-content {
-    transform: scale(1);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-header h3 {
-    color: white;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.modal-header h3 i {
-    color: #ffd700;
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.modal-close:hover {
-    color: #ef4444;
-}
-
-.modal-body {
-    padding: 24px;
-    max-height: 50vh;
-    overflow-y: auto;
-}
-
-.modal-footer {
-    display: flex;
-    gap: 12px;
-    padding: 16px 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    justify-content: flex-end;
-}
-
-.modal-footer button {
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
-}
-
-.btn-export {
-    background: rgba(16, 185, 129, 0.2);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #10b981;
-}
-
-.btn-export:hover {
-    background: rgba(16, 185, 129, 0.3);
-}
-
-.btn-clear {
-    background: rgba(239, 68, 68, 0.2);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #ef4444;
-}
-
-.btn-clear:hover {
-    background: rgba(239, 68, 68, 0.3);
-}
-
-/* Summary Stats */
-.summary-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.summary-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px;
+.signal-timeframe {
+    font-size: 0.75rem;
+    color: #64748b;
     background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
     border-radius: 12px;
 }
 
-.summary-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: rgba(255, 215, 0, 0.1);
+.signals-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 16px;
+}
+
+.signal-card {
+    background: linear-gradient(145deg, rgba(30, 35, 50, 0.95), rgba(20, 25, 40, 0.95));
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.signal-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.gold-signal {
+    border-top: 3px solid #ffd700;
+}
+
+.silver-signal {
+    border-top: 3px solid #c0c0c0;
+}
+
+.signal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.signal-symbol {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffd700;
-    font-size: 1rem;
+    font-weight: 700;
+    font-size: 0.85rem;
 }
 
-.summary-value {
-    font-size: 1.3rem;
+.gold-icon {
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.silver-icon {
+    background: rgba(192, 192, 192, 0.15);
+    color: #c0c0c0;
+    border: 1px solid rgba(192, 192, 192, 0.3);
+}
+
+.signal-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.signal-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.signal-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.signal-action i {
+    font-size: 1.1rem;
+}
+
+.signal-action.buy {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.signal-action.sell {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.signal-action.caution {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.signal-action.neutral {
+    background: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.signal-price {
+    font-size: 1.6rem;
     font-weight: 700;
     color: white;
 }
 
-.summary-label {
-    font-size: 0.75rem;
-    color: #94a3b8;
-}
-
-/* Visit Records List */
-.visit-records-list h4 {
-    font-size: 0.9rem;
-    color: #94a3b8;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.records-container {
-    max-height: 250px;
-    overflow-y: auto;
-}
-
-.record-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
+.signal-details {
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 10px;
-    margin-bottom: 8px;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
 }
 
-.record-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: rgba(59, 130, 246, 0.1);
+.detail-row {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    color: #3b82f6;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.record-info {
-    flex: 1;
+.detail-row:last-child {
+    border-bottom: none;
 }
 
-.record-ip {
+.detail-label {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.detail-value {
+    font-weight: 600;
     font-size: 0.9rem;
     color: white;
-    font-weight: 500;
 }
 
-.record-time {
-    font-size: 0.75rem;
-    color: #64748b;
-    margin-top: 2px;
+.detail-value.stop-loss {
+    color: #ef4444;
 }
 
-.record-price {
+.detail-value.take-profit {
+    color: #10b981;
+}
+
+.signal-indicators {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.indicator-badge {
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
     color: #94a3b8;
-    margin-top: 2px;
 }
 
-.empty-records {
-    text-align: center;
-    color: #64748b;
-    padding: 30px;
+.indicator-badge.bullish {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
 }
 
-.records-more {
-    text-align: center;
-    color: #64748b;
-    font-size: 0.8rem;
-    padding: 10px;
+.indicator-badge.bearish {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
 }
 
-.loading {
-    text-align: center;
-    color: #64748b;
-    padding: 30px;
+/* Mobile Responsive for Signals */
+@media (max-width: 992px) {
+    .signals-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .signal-card {
+        padding: 20px;
+    }
 }
 
-/* Mobile Modal */
-@media (max-width: 500px) {
-    .modal-content {
-        width: 95%;
-        max-height: 90vh;
-    }
-
-    .modal-body {
-        padding: 16px;
-        max-height: 60vh;
-    }
-
-    .summary-stats {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .summary-item {
-        padding: 10px;
-    }
-
-    .summary-value {
-        font-size: 1.1rem;
-    }
-
-    .modal-footer {
+@media (max-width: 768px) {
+    .signal-main {
         flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
     }
-
-    .modal-footer button {
+    
+    .signal-action {
         width: 100%;
         justify-content: center;
+    }
+    
+    .signal-price {
+        font-size: 1.4rem;
+    }
+    
+    .signal-indicators {
+        gap: 6px;
+    }
+    
+    .indicator-badge {
+        padding: 5px 10px;
+        font-size: 0.7rem;
     }
 }
