@@ -72,8 +72,9 @@ const STORAGE_KEY = 'goldSilver_cache';
 // ==================== 访问统计模块 (汇总统计) ====================
 
 const DB_NAME = 'GoldSilverDB';
-const DB_VERSION = 3; // 版本升级
-const STATS_STORE = 'stats'; // 汇总统计存储
+const DB_VERSION = 4; // 版本升级
+const STATS_STORE = 'stats';      // 汇总统计存储
+const CACHE_STORE = 'cache';     // K线和技术分析缓存
 let db = null;
 
 // 访问汇总数据结构
@@ -107,6 +108,11 @@ function openDB() {
             if (!database.objectStoreNames.contains(STATS_STORE)) {
                 database.createObjectStore(STATS_STORE, { keyPath: 'id' });
                 console.log('[DB] 汇总统计存储已创建');
+            }
+            // 创建缓存存储
+            if (!database.objectStoreNames.contains(CACHE_STORE)) {
+                database.createObjectStore(CACHE_STORE, { keyPath: 'id' });
+                console.log('[DB] 缓存存储已创建');
             }
         };
     });
@@ -196,6 +202,101 @@ async function loadStats() {
 // 获取今日日期字符串
 function getTodayStr() {
     return new Date().toISOString().slice(0, 10);
+}
+
+// ==================== IndexedDB 缓存存储 ====================
+
+const CACHE_ID = 'main_cache';
+
+// 保存数据到 IndexedDB 缓存
+function saveToIDBCache(data) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            console.warn('[IDB] 数据库未初始化');
+            resolve(false);
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([CACHE_STORE], 'readwrite');
+            const store = transaction.objectStore(CACHE_STORE);
+            const cacheData = {
+                id: CACHE_ID,
+                ...data,
+                savedAt: Date.now()
+            };
+            const request = store.put(cacheData);
+            
+            request.onsuccess = () => {
+                console.log('[IDB] 缓存已保存');
+                resolve(true);
+            };
+            request.onerror = () => {
+                console.error('[IDB] 保存失败:', request.error);
+                reject(request.error);
+            };
+        } catch (e) {
+            console.error('[IDB] 保存异常:', e);
+            reject(e);
+        }
+    });
+}
+
+// 从 IndexedDB 缓存读取数据
+function loadFromIDBCache() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            resolve(null);
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([CACHE_STORE], 'readonly');
+            const store = transaction.objectStore(CACHE_STORE);
+            const request = store.get(CACHE_ID);
+            
+            request.onsuccess = () => {
+                const result = request.result;
+                if (result) {
+                    delete result.id;
+                    delete result.savedAt;
+                    console.log('[IDB] 缓存已加载');
+                }
+                resolve(result || null);
+            };
+            request.onerror = () => {
+                console.error('[IDB] 读取失败:', request.error);
+                reject(request.error);
+            };
+        } catch (e) {
+            console.error('[IDB] 读取异常:', e);
+            reject(e);
+        }
+    });
+}
+
+// 清除 IndexedDB 缓存
+function clearIDBCache() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            resolve(false);
+            return;
+        }
+        
+        try {
+            const transaction = db.transaction([CACHE_STORE], 'readwrite');
+            const store = transaction.objectStore(CACHE_STORE);
+            const request = store.delete(CACHE_ID);
+            
+            request.onsuccess = () => {
+                console.log('[IDB] 缓存已清除');
+                resolve(true);
+            };
+            request.onerror = () => reject(request.error);
+        } catch (e) {
+            reject(e);
+        }
+    });
 }
 
 // 检查是否是该时段首次访问（同一IP-小时不重复计数）
@@ -338,11 +439,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初始化技术分析界面默认值
     resetTechnicalUI();
     
-    // 立即用缓存数据渲染交易信号（同步，先显示内容）
+    // 立即为两个品种初始化交易信号界面（不管有没有缓存）
     Object.keys(SYMBOLS).forEach(symbol => {
-        if (technicalData[symbol] && technicalData[symbol].currentPrice) {
-            updateTradingSignal(symbol, technicalData[symbol]);
-        }
+        const initData = {
+            rsi: null,
+            macd: null,
+            ma5: null,
+            ma20: null,
+            currentPrice: technicalData[symbol]?.currentPrice,
+            resistance: null,
+            support: null,
+            midLevel: null,
+            shortTrend: '等待',
+            midTrend: '等待',
+            longTrend: '等待',
+            shortStable: false,
+            midStable: false,
+            longStable: false,
+            confidence: 0
+        };
+        updateTradingSignal(symbol, initData);
     });
     
     // 初始获取K线数据（后台异步）
@@ -426,23 +542,23 @@ function initUI() {
 
 }
 
-// ==================== localStorage 缓存管理 ====================
+// ==================== IndexedDB 缓存管理 ====================
 
-// 从 localStorage 加载缓存数据
-function loadCacheFromStorage() {
+// 从 IndexedDB 加载缓存数据
+async function loadCacheFromStorage() {
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            const data = JSON.parse(stored);
+        const data = await loadFromIDBCache();
+        if (data) {
             const now = Date.now();
             let hasValidCache = false;
             
-            Object.keys(data).forEach(symbol => {
+            // 恢复价格缓存
+            Object.keys(SYMBOLS).forEach(symbol => {
                 if (data[symbol] && data[symbol].price && data[symbol].time) {
                     // 检查缓存是否在有效期内 (10分钟)
                     if ((now - data[symbol].time) < CACHE_DURATION) {
                         priceCache[symbol] = data[symbol];
-                        console.log(`[缓存] ${symbol} 从本地存储加载: ${data[symbol].price}`);
+                        console.log(`[IDB] ${symbol} 价格缓存已恢复: ${data[symbol].price}`);
                         hasValidCache = true;
                         
                         // 恢复价格历史
@@ -457,7 +573,7 @@ function loadCacheFromStorage() {
                             SYMBOLS[symbol].low = data[symbol].low;
                         }
                     } else {
-                        console.log(`[缓存] ${symbol} 已过期`);
+                        console.log(`[IDB] ${symbol} 缓存已过期`);
                     }
                 }
             });
@@ -469,7 +585,7 @@ function loadCacheFromStorage() {
                         technicalData[symbol] = { ...technicalData[symbol], ...data.technical[symbol] };
                     }
                 });
-                console.log('[缓存] 技术分析数据已恢复');
+                console.log('[IDB] 技术分析数据已恢复');
             }
             
             // 恢复K线缓存
@@ -479,7 +595,7 @@ function loadCacheFromStorage() {
                         klineData[symbol] = { ...klineData[symbol], ...data.klines[symbol] };
                     }
                 });
-                console.log('[缓存] K线数据已恢复');
+                console.log('[IDB] K线数据已恢复');
             }
             
             // 恢复退避状态
@@ -488,35 +604,81 @@ function loadCacheFromStorage() {
                 const remaining = data.backoff.minutes - elapsed;
                 if (remaining > 0) {
                     rateLimitBackoff = Math.ceil(remaining);
-                    console.log(`[缓存] 恢复退避状态: 还需等待 ${rateLimitBackoff} 分钟`);
+                    console.log(`[IDB] 恢复退避状态: 还需等待 ${rateLimitBackoff} 分钟`);
                 }
             }
             
             return hasValidCache;
         }
     } catch (e) {
-        console.error('[缓存] 读取本地存储失败:', e);
+        console.error('[IDB] 读取缓存失败:', e);
+        // 降级到 localStorage
+        return loadCacheFromLocalStorage();
     }
     return false;
 }
 
-// 保存退避状态到 localStorage
-function saveBackoffState() {
+// 降级：localStorage 读取
+function loadCacheFromLocalStorage() {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        const data = stored ? JSON.parse(stored) : {};
-        data.backoff = {
-            minutes: rateLimitBackoff,
-            time: Date.now()
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        if (stored) {
+            const data = JSON.parse(stored);
+            const now = Date.now();
+            let hasValidCache = false;
+            
+            Object.keys(data).forEach(symbol => {
+                if (data[symbol] && data[symbol].price && data[symbol].time) {
+                    if ((now - data[symbol].time) < CACHE_DURATION) {
+                        priceCache[symbol] = data[symbol];
+                        if (data[symbol].history) {
+                            priceHistory[symbol] = data[symbol].history;
+                        }
+                        if (data[symbol].open !== undefined) {
+                            SYMBOLS[symbol].open = data[symbol].open;
+                            SYMBOLS[symbol].high = data[symbol].high;
+                            SYMBOLS[symbol].low = data[symbol].low;
+                        }
+                        hasValidCache = true;
+                    }
+                }
+            });
+            
+            if (data.technical) {
+                Object.keys(data.technical).forEach(symbol => {
+                    if (technicalData[symbol]) {
+                        technicalData[symbol] = { ...technicalData[symbol], ...data.technical[symbol] };
+                    }
+                });
+            }
+            
+            if (data.klines) {
+                Object.keys(data.klines).forEach(symbol => {
+                    if (klineData[symbol]) {
+                        klineData[symbol] = { ...klineData[symbol], ...data.klines[symbol] };
+                    }
+                });
+            }
+            
+            return hasValidCache;
+        }
     } catch (e) {
-        console.error('[退避] 保存状态失败:', e);
+        console.error('[降级] localStorage 读取失败:', e);
     }
+    return false;
 }
 
-// 保存缓存到 localStorage
-function saveCacheToStorage() {
+
+// 保存退避状态
+async function saveBackoffState() {
+    // 退避状态会在下次 saveCacheToStorage 时一起保存
+    // 这里只更新内存中的时间戳
+    console.log(`[退避] 当前状态: ${rateLimitBackoff} 分钟`);
+}
+
+
+// 保存缓存到 IndexedDB
+async function saveCacheToStorage() {
     try {
         const data = {};
         
@@ -546,11 +708,49 @@ function saveCacheToStorage() {
             });
         });
         
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        console.log('[缓存] 已保存到本地存储');
+        // 保存退避状态
+        data.backoff = {
+            minutes: rateLimitBackoff,
+            time: Date.now()
+        };
+        
+        // 优先使用 IndexedDB 保存
+        await saveToIDBCache(data);
+        
+        // 同时备份到 localStorage（降级用）
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+            console.warn('[降级] localStorage 备份失败:', e);
+        }
     } catch (e) {
-        console.error('[缓存] 保存到本地存储失败:', e);
+        console.error('[IDB] 保存缓存失败:', e);
+        // 降级到 localStorage
+        try {
+            const data = buildCacheData();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e2) {
+            console.error('[降级] localStorage 保存失败:', e2);
+        }
     }
+}
+
+// 辅助函数：构建缓存数据
+function buildCacheData() {
+    const data = {};
+    Object.keys(SYMBOLS).forEach(symbol => {
+        data[symbol] = {
+            price: priceCache[symbol]?.price,
+            time: priceCache[symbol]?.time,
+            open: SYMBOLS[symbol]?.open,
+            high: SYMBOLS[symbol]?.high,
+            low: SYMBOLS[symbol]?.low,
+            history: priceHistory[symbol]?.slice(-100)
+        };
+    });
+    data.technical = { ...technicalData };
+    data.klines = JSON.parse(JSON.stringify(klineData));
+    return data;
 }
 
 // 定期保存缓存 (每30秒)
@@ -561,26 +761,47 @@ async function connectAPI() {
     try {
         updateConnectionStatus('connecting');
         
-        // 先从 localStorage 加载缓存数据
-        const hasCache = loadCacheFromStorage();
+        // 先从 IndexedDB 加载缓存数据
+        const hasCache = await loadCacheFromStorage();
         
         // 如果有有效缓存，先用缓存数据更新界面
         if (hasCache) {
-            Object.keys(priceCache).forEach(symbol => {
+            // 优先用K线缓存数据执行技术分析（关键修复！）
+            Object.keys(SYMBOLS).forEach(symbol => {
+                // 检查所有周期的K线缓存数据
+                const periods = [10, 30, 60, 240];
+                let hasAnyKline = false;
+                
+                periods.forEach(period => {
+                    const klines = klineData[symbol]?.[period];
+                    if (klines && klines.length > 5) {
+                        hasAnyKline = true;
+                        console.log(`[缓存恢复] ${symbol} ${period}分钟K线: ${klines.length}条`);
+                    }
+                });
+                
+                // 对当前选中周期执行技术分析
+                const currentKlines = klineData[symbol]?.[currentPeriod];
+                if (currentKlines && currentKlines.length > 5) {
+                    console.log(`[初始化] ${symbol} 使用K线缓存(${currentPeriod}分钟)执行技术分析`);
+                    runTechnicalAnalysis(symbol, currentPeriod);
+                } else {
+                    // 当前周期没有缓存，但有其他周期数据
+                    const anyPeriod = periods.find(p => klineData[symbol]?.[p]?.length > 5);
+                    if (anyPeriod) {
+                        console.log(`[初始化] ${symbol} 切换到可用周期(${anyPeriod}分钟)执行技术分析`);
+                        runTechnicalAnalysis(symbol, anyPeriod);
+                    }
+                }
+                
+                // 同时更新价格显示
                 if (priceCache[symbol].price !== null) {
-                    // 使用缓存数据更新显示
                     handleQuote({
                         s: symbol,
                         ld: priceCache[symbol].price,
                         t: priceCache[symbol].time,
                         v: 0
                     }, false);
-                    
-                    // 更新技术分析界面
-                    const data = technicalData[symbol];
-                    if (data && data.currentPrice) {
-                        updateTechnicalUI(symbol, data);
-                    }
                 }
             });
             
@@ -820,9 +1041,15 @@ function startPolling() {
 }
 
 // 获取K线数据
-async function fetchKlineData(symbol, period) {
+async function fetchKlineData(symbol, period, retries = 3) {
     const info = SYMBOLS[symbol];
     if (!info) return;
+    
+    // 如果处于退避期，直接返回（使用已有缓存）
+    if (rateLimitBackoff > 0) {
+        console.log(`[K线] ${symbol} ${period}分钟: 处于退避期(${rateLimitBackoff}分钟)，跳过请求`);
+        return;
+    }
     
     const kType = PERIOD_MAP[period] || 5; // 默认60分钟
     const limit = period === 240 ? 100 : 100; // 4小时需要更多数据来模拟
@@ -838,8 +1065,24 @@ async function fetchKlineData(symbol, period) {
             }
         });
         
+        if (response.status === 429) {
+            console.warn(`[K线] ${symbol} ${period}分钟: 请求过于频繁(429)`);
+            
+            // 增加退避时间
+            rateLimitBackoff = Math.min(rateLimitBackoff * 2 || 1, MAX_BACKOFF);
+            saveBackoffState();
+            
+            // 如果有重试次数，延迟后重试
+            if (retries > 0) {
+                console.log(`[K线] ${retries}秒后重试...`);
+                await new Promise(r => setTimeout(r, retries * 1000));
+                return fetchKlineData(symbol, period, retries - 1);
+            }
+            return;
+        }
+        
         if (!response.ok) {
-            console.warn(`[${symbol}] K线获取失败: HTTP ${response.status}`);
+            console.warn(`[K线] ${symbol} ${period}分钟: 获取失败 HTTP ${response.status}`);
             return;
         }
         
@@ -869,10 +1112,10 @@ async function fetchKlineData(symbol, period) {
             // 执行技术分析（会自动更新交易信号）
             runTechnicalAnalysis(symbol, period);
         } else {
-            console.warn(`[${symbol}] K线数据为空:`, json.msg);
+            console.warn(`[${symbol}] ${period}分钟K线数据为空:`, json.msg);
         }
     } catch (error) {
-        console.error(`[${symbol}] 获取K线失败:`, error);
+        console.error(`[${symbol}] ${period}分钟K线获取失败:`, error);
     }
 }
 
@@ -896,10 +1139,46 @@ function simulate4HKline(hourlyKlines) {
 }
 
 // 刷新当前时间周期的K线数据
-function refreshKlineData() {
+async function refreshKlineData() {
+    // 如果处于退避期，延迟执行
+    if (rateLimitBackoff > 0) {
+        console.log(`[K线] 处于退避期，${rateLimitBackoff}分钟后重试`);
+        setTimeout(refreshKlineData, rateLimitBackoff * 60 * 1000);
+        return;
+    }
+    
+    // 优先获取当前周期的数据
+    const currentPeriodKlines = [];
     Object.keys(SYMBOLS).forEach(symbol => {
-        fetchKlineData(symbol, currentPeriod);
+        const existing = klineData[symbol]?.[currentPeriod];
+        if (!existing || existing.length < 5) {
+            currentPeriodKlines.push({ symbol, period: currentPeriod });
+        }
     });
+    
+    // 按顺序获取当前周期数据（1.5秒间隔）
+    for (const { symbol, period } of currentPeriodKlines) {
+        await fetchKlineData(symbol, period);
+        await new Promise(r => setTimeout(r, 1500));
+    }
+    
+    // 后台延迟加载其他周期数据（不阻塞）
+    setTimeout(() => {
+        const periods = [10, 30, 60, 240].filter(p => p !== currentPeriod);
+        let delay = 0;
+        
+        Object.keys(SYMBOLS).forEach(symbol => {
+            periods.forEach(period => {
+                const existing = klineData[symbol]?.[period];
+                if (!existing || existing.length < 5) {
+                    delay += 2000; // 每个请求延迟2秒
+                    setTimeout(() => {
+                        fetchKlineData(symbol, period);
+                    }, delay);
+                }
+            });
+        });
+    }, 3000); // 3秒后开始加载其他周期
 }
 
 // 页面卸载前保存缓存
@@ -1159,22 +1438,52 @@ function runTechnicalAnalysis(symbol, period = 60) {
     // 优先使用K线数据，否则使用tick累积数据
     const klines = klineData[symbol]?.[period];
     let history, currentPrice, prices;
+    let dataSource = '';
     
     if (klines && klines.length > 5) {
         // 使用K线数据
         history = klines.map(k => ({ price: k.close, time: k.time }));
         currentPrice = klines[klines.length - 1].close;
         prices = klines.map(k => k.close);
+        dataSource = `K线(${period}分钟)`;
         console.log(`[技术分析] ${symbol} ${period}分钟K线数据:`, history.length, '条');
     } else {
         // 回退到tick累积数据
         history = priceHistory[symbol];
-        if (history.length < 5) {
-            console.log(`[技术分析] ${symbol} 数据不足，等待更多数据...`);
+        if (history.length < 3) {
+            // 数据不足，但仍显示基本信息（使用最新价）
+            console.log(`[技术分析] ${symbol} 数据不足(${history.length}条)，显示基本信息...`);
+            
+            const basicData = {
+                rsi: null,
+                macd: null,
+                ma5: null,
+                ma20: null,
+                currentPrice: history.length > 0 ? history[history.length - 1].price : null,
+                resistance: null,
+                support: null,
+                midLevel: null,
+                shortTrend: '震荡',
+                midTrend: '震荡',
+                longTrend: '震荡',
+                shortStable: false,
+                midStable: false,
+                longStable: false,
+                confidence: 10
+            };
+            
+            // 更新交易信号（显示数据不足提示）
+            updateTradingSignal(symbol, basicData);
+            
+            // 如果是当前选中品种，更新技术分析面板
+            if (symbol === currentSymbol) {
+                updateTechnicalUI(symbol, basicData);
+            }
             return;
         }
         currentPrice = history[history.length - 1].price;
         prices = history.map(h => h.price);
+        dataSource = `tick(${history.length}条)`;
         console.log(`[技术分析] ${symbol} tick数据:`, history.length, '条');
     }
     
@@ -1304,17 +1613,26 @@ function updateTradingSignal(symbol, data) {
     const trendEl = document.getElementById(`${prefix}-trend`);
     
     if (macdEl) {
-        const macdSignal = macd?.histogram > 0 ? '多头' : '空头';
-        macdEl.textContent = `MACD: ${macdSignal}`;
-        macdEl.className = `indicator-badge ${macd?.histogram > 0 ? 'bullish' : 'bearish'}`;
+        if (macd && macd.histogram !== undefined) {
+            const macdSignal = macd.histogram > 0 ? '多头' : '空头';
+            macdEl.textContent = `MACD: ${macdSignal}`;
+            macdEl.className = `indicator-badge ${macd.histogram > 0 ? 'bullish' : 'bearish'}`;
+        } else {
+            macdEl.textContent = 'MACD: --';
+            macdEl.className = 'indicator-badge';
+        }
     }
     if (rsiEl) {
-        let rsiStatus = '中性';
-        if (rsi > 70) rsiStatus = '超买';
-        else if (rsi < 30) rsiStatus = '超卖';
-        else if (rsi > 55) rsiStatus = '偏多';
-        else if (rsi < 45) rsiStatus = '偏空';
-        rsiEl.textContent = `RSI: ${rsi?.toFixed(0) || '--'} (${rsiStatus})`;
+        if (rsi !== null && rsi !== undefined) {
+            let rsiStatus = '中性';
+            if (rsi > 70) rsiStatus = '超买';
+            else if (rsi < 30) rsiStatus = '超卖';
+            else if (rsi > 55) rsiStatus = '偏多';
+            else if (rsi < 45) rsiStatus = '偏空';
+            rsiEl.textContent = `RSI: ${rsi.toFixed(0)} (${rsiStatus})`;
+        } else {
+            rsiEl.textContent = 'RSI: -- (中性)';
+        }
     }
     if (trendEl) {
         const trend = (shortTrend === midTrend && midTrend === longTrend) ? longTrend : 
@@ -1328,6 +1646,21 @@ function updateTradingSignal(symbol, data) {
 // 计算交易信号
 function calculateTradingSignal(symbol, data) {
     const { rsi, macd, currentPrice, resistance, support, shortTrend, midTrend, longTrend, confidence } = data;
+    
+    // 数据不足时返回特殊状态
+    if (confidence < 20 || (!rsi && !macd)) {
+        return {
+            action: '数据收集中',
+            signalClass: 'neutral',
+            direction: '--',
+            icon: 'fa-spinner fa-spin',
+            stopLoss: null,
+            takeProfit: null,
+            riskReward: '--',
+            score: 0,
+            reasons: ['等待K线数据...']
+        };
+    }
     
     // 止损止盈距离（根据波动率计算）
     const atr = resistance && support ? (resistance - support) / 2 : currentPrice * 0.005;
