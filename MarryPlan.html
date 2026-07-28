@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>婚礼统筹方案 · 于都 · 2026.10.01</title>
+<style>
+  :root {
+    --red: #c0392b;
+    --red-dark: #922b21;
+    --red-light: #e74c3c;
+    --gold: #d4ac0d;
+    --gold-light: #f1c40f;
+    --bg: #fdf6f0;
+    --card: #ffffff;
+    --text: #2c1810;
+    --text-light: #7b6b5e;
+    --border: #e8d5c4;
+    --green: #27ae60;
+    --blue: #2980b9;
+    --purple: #8e44ad;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    padding: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  /* 工具栏 */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(146,43,33,0.95);
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .toolbar .label {
+    color: #fff;
+    font-size: 13px;
+    margin-right: auto;
+    font-weight: bold;
+  }
+  .toolbar button {
+    border: none;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .toolbar button:active { transform: scale(0.95); }
+  .btn-save { background: var(--gold); color: #fff; }
+  .btn-reset { background: #e74c3c; color: #fff; }
+  .btn-print { background: #fff; color: var(--red-dark); }
+  .btn-edit { background: var(--green); color: #fff; }
+  .btn-edit.active { background: #95a5a6; }
+  .save-status {
+    color: #fff;
+    font-size: 12px;
+    opacity: 0.8;
+    display: none;
+  }
+  .save-status.show { display: inline; }
+
+  /* 可编辑样式 */
+  .editable {
+    position: relative;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  body.edit-mode .editable {
+    cursor: text;
+  }
+  body.edit-mode .editable:hover {
+    background: #fff8dc;
+    box-shadow: 0 0 0 2px rgba(212,172,13,0.3);
+  }
+  body.edit-mode .editable:focus {
+    background: #fffbe6;
+    box-shadow: 0 0 0 2px var(--gold);
+    outline: none;
+  }
+
+  /* 头部 */
+  .hero {
+    background: linear-gradient(135deg, var(--red-dark), var(--red), var(--red-light));
+    border-radius: 16px;
+    padding: 36px 20px;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(192,57,43,0.25);
+  }
+  .hero::before {
+    content: "\56cd";
+    position: absolute;
+    font-size: 160px;
+    opacity: 0.08;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-weight: bold;
+  }
+  .hero h1 { font-size: 26px; margin-bottom: 8px; position: relative; }
+  .hero .date { font-size: 16px; opacity: 0.9; position: relative; }
+  .hero .info { font-size: 13px; margin-top: 10px; opacity: 0.85; position: relative; }
+  .hero .countdown {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 6px 18px;
+    margin-top: 12px;
+    font-size: 14px;
+    position: relative;
+  }
+
+  /* 章节 */
+  .section {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+  .section-title {
+    font-size: 18px;
+    color: var(--red-dark);
+    border-left: 4px solid var(--red);
+    padding-left: 12px;
+    margin-bottom: 16px;
+    font-weight: bold;
+  }
+
+  /* 时间线 */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 10px; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(var(--red), var(--gold));
+    border-radius: 2px;
+  }
+  .tl-item { position: relative; margin-bottom: 20px; }
+  .tl-item::before {
+    content: "";
+    position: absolute;
+    left: -22px; top: 5px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 3px solid var(--red);
+    z-index: 1;
+  }
+  .tl-date {
+    font-size: 13px;
+    color: var(--red);
+    font-weight: bold;
+    margin-bottom: 3px;
+  }
+  .tl-title { font-size: 15px; font-weight: bold; margin-bottom: 5px; }
+  .tl-desc { font-size: 13px; color: var(--text-light); }
+  .tl-desc ul { padding-left: 16px; margin-top: 4px; }
+  .tl-desc li { margin-bottom: 3px; }
+
+  /* 表格 */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    min-width: 500px;
+  }
+  th, td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    word-break: break-word;
+  }
+  th {
+    background: var(--red-dark);
+    color: #fff;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  tr:nth-child(even) td { background: #faf6f2; }
+
+  /* 标签 */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .tag-red { background: #fadbd8; color: var(--red-dark); }
+  .tag-green { background: #d5f5e3; color: #1e8449; }
+  .tag-gold { background: #fef9e7; color: #b7950b; }
+  .tag-blue { background: #d6eaf8; color: #2471a3; }
+  .tag-hotel { background: #e8daef; color: #6c3483; }
+
+  /* 当天流程 */
+  .day-flow { display: flex; flex-direction: column; gap: 10px; }
+  .flow-card {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .flow-time {
+    background: var(--red-dark);
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+  }
+  .flow-time .t { font-size: 18px; }
+  .flow-time .d { font-size: 11px; opacity: 0.8; }
+  .flow-body {
+    padding: 10px 14px;
+    background: #fff;
+  }
+  .flow-body .title { font-size: 15px; font-weight: bold; margin-bottom: 3px; }
+  .flow-body .detail { font-size: 13px; color: var(--text-light); }
+  .flow-body .checklist {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .flow-body .checklist label {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #f8f5f0;
+    padding: 5px 10px;
+    border-radius: 6px;
+  }
+  .flow-body .checklist input { width: 18px; height: 18px; }
+
+  /* 物资清单 */
+  .goods-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .goods-card {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: #fffcf9;
+  }
+  .goods-card.hotel-provided {
+    border-color: #d7bde2;
+    background: #faf5fb;
+  }
+  .goods-card h4 {
+    color: var(--red-dark);
+    font-size: 14px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px dashed var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .goods-card.hotel-provided h4 { color: #6c3483; }
+  .goods-card ul { list-style: none; }
+  .goods-card li {
+    font-size: 13px;
+    padding: 4px 0;
+    display: flex;
+    align-items: flex-start;
+  }
+  .goods-card li input[type="checkbox"] {
+    margin-right: 6px;
+    margin-top: 5px;
+    width: 16px; height: 16px;
+    flex-shrink: 0;
+  }
+  .goods-card li .note {
+    color: var(--text-light);
+    font-size: 11px;
+  }
+
+  /* 预算 */
+  .budget-bar {
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    margin: 8px 0;
+  }
+  .budget-bar > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #fff;
+    font-weight: bold;
+  }
+
+  /* 酒店卡片 */
+  .hotel-card {
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #fffcf9, #fef9e7);
+  }
+  .hotel-card .hotel-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: #fff;
+    padding: 3px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  .hotel-card h4 { font-size: 17px; color: var(--red-dark); margin-bottom: 6px; }
+  .hotel-card p { font-size: 13px; color: var(--text-light); margin-bottom: 4px; }
+  .hotel-card .hotel-services {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 2px dashed var(--border);
+  }
+  .hotel-card .hotel-services strong { color: var(--green); font-size: 13px; }
+
+  /* 提示框 */
+  .tip-box {
+    background: #fef9e7;
+    border-left: 4px solid var(--gold);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 10px 0;
+    font-size: 13px;
+  }
+  .tip-box strong { color: var(--red-dark); }
+
+  /* 人员分工 */
+  .role-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .role-card {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    background: #fffcf9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .role-card .role-icon {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--red-dark);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .role-card .role-info { flex: 1; }
+  .role-card .role-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--red-dark);
+    margin-bottom: 2px;
+  }
+  .role-card .role-desc { font-size: 12px; color: var(--text-light); }
+  .role-card .role-person {
+    width: 100px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+    color: var(--text-light);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* 底部 */
+  .footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--text-light);
+    font-size: 12px;
+  }
+
+  /* 移动端适配 */
+  @media (min-width: 600px) {
+    body { padding: 20px 15px; }
+    .hero { padding: 50px 30px; }
+    .hero h1 { font-size: 32px; }
+    .hero .date { font-size: 20px; }
+    .section { padding: 30px; }
+    .section-title { font-size: 22px; }
+    .goods-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    .role-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    .flow-card { display: flex; align-items: stretch; }
+    .flow-time { flex-direction: column; justify-content: center; align-items: center; min-width: 110px; padding: 15px 18px; }
+    .flow-time .t { font-size: 20px; }
+    .role-card { flex-direction: row; }
+    th, td { font-size: 14px; padding: 10px 14px; }
+  }
+
+  /* 手机端优化 */
+  @media (max-width: 400px) {
+    body { padding: 8px; }
+    .hero { padding: 24px 14px; border-radius: 12px; }
+    .hero h1 { font-size: 22px; }
+    .hero .date { font-size: 14px; }
+    .hero .info { font-size: 12px; }
+    .hero .countdown { font-size: 12px; padding: 4px 14px; }
+    .section { padding: 12px; border-radius: 10px; }
+    .section-title { font-size: 16px; padding-left: 10px; }
+    .toolbar { padding: 6px 8px; gap: 5px; }
+    .toolbar button { padding: 6px 10px; font-size: 12px; }
+    .flow-time { padding: 8px 12px; }
+    .flow-time .t { font-size: 16px; }
+    .flow-body { padding: 8px 10px; }
+    .flow-body .title { font-size: 14px; }
+    .flow-body .detail { font-size: 12px; }
+    .goods-card { padding: 10px; }
+    .role-card { padding: 10px; gap: 8px; }
+    .role-card .role-icon { width: 32px; height: 32px; font-size: 15px; }
+    .tl-item { margin-bottom: 14px; }
+    .timeline { padding-left: 22px; }
+    .table-wrap { margin: 0 -4px; }
+    th, td { font-size: 12px; padding: 6px 6px; }
+    .del-item-btn { font-size: 14px; min-width: 28px; }
+    .del-td { font-size: 14px; width: 28px; padding: 4px; }
+    .flow-card .del-card-btn { width: 28px; height: 28px; font-size: 16px; line-height: 28px; top: 2px; right: 2px; }
+    .flow-add-card button { padding: 10px; font-size: 13px; }
+    .goods-add-card button { padding: 10px; font-size: 13px; }
+    .add-role-card button { padding: 10px; font-size: 13px; }
+    .add-item-btn, .add-row-btn { font-size: 11px; padding: 3px 0; }
+    .flow-body .checklist label { font-size: 11px; padding: 3px 6px; }
+    .role-card .role-person { width: 80px; font-size: 11px; }
+    .hotel-card { padding: 10px; }
+    .hotel-card h4 { font-size: 15px; }
+    .tip-box { padding: 8px 10px; font-size: 12px; }
+    .cb-hint, .auto-collapse-note { font-size: 11px; padding: 4px 8px; }
+  }
+
+  /* 通用触摸优化 */
+  .toolbar button, .del-item-btn, .del-td, .flow-card .del-card-btn,
+  .goods-add-item button, .goods-add-card button, .add-role-card button,
+  .flow-add-card button, .add-item-btn, .add-row-btn {
+    touch-action: manipulation;
+  }
+  .flow-card .del-card-btn { width: 32px; height: 32px; line-height: 32px; font-size: 20px; }
+  .edit-mode .flow-card .del-card-btn { opacity: 0.7; }
+
+  /* === 时间节点自动折叠 === */
+  .tl-item[data-end-date] .tl-date { cursor: pointer; user-select: none; }
+  .tl-item[data-end-date] .tl-date::after { content: " \25BE"; font-size: 12px; color: #bdc3c7; font-weight: bold; }
+  .tl-item.collapsed .tl-desc { display: none; }
+  .tl-item.collapsed .tl-date::after { content: " \25B8"; }
+  .tl-item.past::before { border-color: #bdc3c7 !important; }
+  .tl-item.past .tl-date { color: #bdc3c7; }
+  .tl-item.past .tl-title { color: #95a5a6; }
+  .tl-item.past .tl-title::after { content: " \00B7 \5DF2\5B8C\6210"; font-size: 11px; color: #bdc3c7; font-weight: normal; }
+  .tl-item.current::before { border-color: var(--green) !important; }
+  .tl-item.current .tl-title::after { content: " \00B7 \8FDB\884C\4E2D"; font-size: 11px; color: var(--green); font-weight: normal; }
+  .flow-card[data-datetime] .flow-time { cursor: pointer; }
+  .flow-card.collapsed .flow-body { display: none; }
+  .flow-card.past .flow-time { background: #bdc3c7 !important; }
+  .flow-card.past .flow-body .title { color: #95a5a6; }
+  .flow-card.past .flow-body .detail { color: #bbb; }
+  .flow-card.past .flow-time::after { content: " \2713"; font-size: 12px; }
+
+  /* 当天流程卡片增删按钮（仅编辑模式可见） */
+  .flow-card .del-card-btn {
+    position: absolute; top: 4px; right: 4px;
+    color: #e74c3c; font-size: 18px; font-weight: bold;
+    cursor: pointer; opacity: 0; transition: opacity 0.2s;
+    width: 24px; height: 24px; line-height: 24px; text-align: center;
+    border-radius: 50%; background: rgba(255,255,255,0.8);
+    user-select: none; z-index: 5;
+  }
+  .edit-mode .flow-card .del-card-btn { opacity: 0.6; }
+  .edit-mode .flow-card .del-card-btn:hover { opacity: 1; background: #fff; }
+  .flow-card { position: relative; }
+  .flow-add-card { display: none; }
+  .edit-mode .flow-add-card { display: block; }
+  .flow-add-card button {
+    width: 100%; background: none; border: 2px dashed var(--border);
+    color: var(--text-light); padding: 14px; border-radius: 10px;
+    cursor: pointer; font-size: 14px; margin-top: 4px; transition: all 0.2s;
+  }
+  .flow-add-card button:hover { border-color: var(--red); color: var(--red); }
+  .auto-collapse-note {
+    font-size: 12px; color: var(--text-light); padding: 6px 10px;
+    background: #f8f5f0; border-radius: 8px; margin-bottom: 12px;
+  }
+
+  /* === Section级别折叠 === */
+  .section[data-end-date] .section-title { cursor: pointer; user-select: none; }
+  .section[data-end-date] .section-title::after { content: " \25BE"; font-size: 14px; color: #bdc3c7; font-weight: bold; transition: transform 0.2s; }
+  .section[data-end-date].collapsed > *:not(.section-title) { display: none; }
+  .section[data-end-date].collapsed .section-title::after { content: " \25B8"; }
+  .section[data-end-date].collapsed .section-title { opacity: 0.5; }
+  .section[data-end-date].past .section-title { opacity: 0.4; }
+  .section[data-end-date].past .section-title::before { content: "\2713 \5DF2\5B8C\6210 \00B7 "; font-size: 13px; color: var(--green); }
+  .section[data-end-date].current .section-title::before { content: "\25B8 \8FDB\884C\4E2D \00B7 "; font-size: 13px; color: var(--green); }
+
+  /* === 勾选框通用样式 === */
+  .tl-desc ul { list-style: none; padding-left: 0; margin-top: 4px; }
+  .tl-desc li { display: flex; align-items: flex-start; margin-bottom: 3px; }
+  .tl-desc li input[type="checkbox"] { margin-right: 6px; margin-top: 5px; width: 16px; height: 16px; flex-shrink: 0; }
+  .tl-desc li:has(input:checked) { color: #bdc3c7; text-decoration: line-through; opacity: 0.5; }
+  .goods-card li:has(input:checked) { color: #bdc3c7; text-decoration: line-through; opacity: 0.5; }
+  .flow-body .checklist label:has(input:checked) { opacity: 0.4; text-decoration: line-through; }
+  th.cb-th { width: 36px; text-align: center; }
+  td.cb-td { text-align: center; }
+  td.cb-td input { width: 16px; height: 16px; }
+  tr:has(input:checked) td { color: #bdc3c7; }
+  .role-card .role-cb { width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; }
+  .role-card:has(.role-cb:checked) { border-color: var(--green); background: #f0fff4; }
+  .role-card:has(.role-cb:checked) .role-name { color: var(--green); }
+  .role-card:has(.role-cb:checked) .role-name::after { content: " \2713"; font-size: 12px; }
+  .cb-hint { font-size: 12px; color: var(--text-light); padding: 6px 10px; background: #f8f5f0; border-radius: 8px; margin-bottom: 12px; }
+
+  /* === 物资清单增删功能（仅编辑模式可见） === */
+  .goods-card .del-item-btn {
+    color: #e74c3c; font-size: 16px; cursor: pointer; margin-left: auto;
+    padding: 0 4px; flex-shrink: 0; line-height: 1.4; font-weight: bold;
+    opacity: 0; transition: opacity 0.2s; user-select: none;
+    min-width: 20px; text-align: center;
+  }
+  .goods-card .del-item-btn:hover { opacity: 1; }
+  .edit-mode .goods-card .del-item-btn { opacity: 0.8; }
+  .goods-item-text { outline: none; border-radius: 3px; padding: 1px 2px; }
+  .edit-mode .goods-item-text { border-bottom: 1px dotted #bbb; }
+  .goods-item-text:focus { background: #fff3cd; }
+  .goods-add-item { display: none; }
+  .edit-mode .goods-add-item { display: flex; }
+  .goods-add-item button { background: none; border: 1px dashed #ccc; color: #aaa; padding: 4px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; text-align: center; }
+  .goods-add-item button:hover { border-color: var(--red); color: var(--red); }
+  .goods-card .del-card-btn {
+    background: none; border: 1px solid #e74c3c; color: #e74c3c;
+    font-size: 11px; padding: 2px 8px; border-radius: 6px; cursor: pointer;
+    margin-left: 8px; white-space: nowrap; opacity: 0;
+  }
+  .goods-card .del-card-btn:hover { opacity: 1; }
+  .edit-mode .goods-card .del-card-btn { opacity: 0.5; }
+  .edit-mode .goods-card .del-card-btn:hover { opacity: 1; }
+  .goods-add-card { display: none; }
+  .edit-mode .goods-add-card { display: block; }
+  .goods-add-card button { width: 100%; background: none; border: 2px dashed var(--border); color: var(--text-light); padding: 14px; border-radius: 10px; cursor: pointer; font-size: 14px; margin-top: 4px; }
+  .goods-add-card button:hover { border-color: var(--red); color: var(--red); }
+  .goods-card-title-edit { outline: none; }
+
+  /* === 通用删除按钮（所有勾选项列表，仅编辑模式可见） === */
+  .del-item-btn {
+    color: #e74c3c; font-size: 16px; cursor: pointer; margin-left: 8px;
+    padding: 0 4px; line-height: 1.4; font-weight: bold;
+    opacity: 0; transition: opacity 0.2s; user-select: none;
+    display: inline-block; vertical-align: middle; flex-shrink: 0;
+  }
+  .del-item-btn:hover { opacity: 1; }
+  .edit-mode .del-item-btn { opacity: 0.8; }
+
+  /* 时间线列表删除按钮位置 */
+  .tl-desc li .del-item-btn { margin-left: auto; }
+
+  /* 当天流程清单删除按钮 */
+  .flow-body .checklist label .del-item-btn { margin-left: 4px; font-size: 14px; }
+
+  /* 表格删除按钮单元格（仅编辑模式可见） */
+  .del-td { text-align: center; color: #e74c3c; font-weight: bold; width: 30px; padding: 6px; font-size: 16px; opacity: 0; }
+  .edit-mode .del-td { opacity: 1; cursor: pointer; }
+  .edit-mode .del-td:hover { background: #fadbd8; border-radius: 4px; }
+  .del-th { width: 36px; text-align: center; }
+
+  /* 通用新增按钮（仅编辑模式可见） */
+  .add-item-btn, .add-row-btn {
+    color: #aaa; font-size: 12px; cursor: pointer; padding: 4px 0;
+    border: 1px dashed #ddd; border-radius: 4px; text-align: center;
+    transition: all 0.2s; display: none; margin-top: 4px;
+  }
+  .edit-mode .add-item-btn, .edit-mode .add-row-btn { display: block; }
+  .add-item-btn:hover, .add-row-btn:hover { color: var(--red); border-color: var(--red); }
+  .add-item-li { list-style: none !important; display: none; }
+  .edit-mode .add-item-li { display: list-item; }
+  .add-item-label { display: none !important; align-items: center; justify-content: center; }
+  .edit-mode .add-item-label { display: inline-flex !important; }
+
+  /* 新增角色卡片按钮（仅编辑模式可见） */
+  .add-role-card { display: none; }
+  .edit-mode .add-role-card { display: block; }
+  .add-role-card button { width: 100%; background: none; border: 2px dashed var(--border); color: var(--text-light); padding: 14px; border-radius: 10px; cursor: pointer; font-size: 14px; margin-top: 4px; transition: all 0.2s; }
+  .add-role-card button:hover { border-color: var(--red); color: var(--red); }
+
+  /* 打印 */
+  @media print {
+    .toolbar { display: none; }
+    body { padding: 0; background: #fff; }
+    body.edit-mode .editable:hover,
+    body.edit-mode .editable:focus { background: none; box-shadow: none; }
+    .section { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    .hero { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- 工具栏 -->
+  <div class="toolbar">
+    <span class="label">婚礼统筹方案</span>
+    <span class="save-status" id="saveStatus">已自动保存</span>
+    <button class="btn-edit" id="btnEdit" onclick="toggleEdit()">编辑模式</button>
+    <button class="btn-save" onclick="saveData()">保存</button>
+    <button class="btn-reset" onclick="resetData()">重置</button>
+    <button class="btn-print" onclick="window.print()">打印</button>
+  </div>
+
+  <!-- 头部 -->
+  <div class="hero">
+    <h1 class="editable">婚礼统筹方案</h1>
+    <div class="date editable">2026年10月1日 · 国庆吉日 · 于都县</div>
+    <div class="info editable">新郎（于都·客家） × 新娘（潮汕） | 潮客联姻 · 百年好合</div>
+    <div class="countdown" id="countdown">距婚礼还有 64 天</div>
+  </div>
+
+  <!-- 一、关键时间线 -->
+  <div class="section" data-start-date="2026-07-25" data-end-date="2026-10-01">
+    <h2 class="section-title editable">一、关键时间节点总览</h2>
+    <div class="cb-hint">💡 所有列表项均可勾选标记完成进度，勾选后自动划线置灰。已过时间节点自动折叠（时间线内每个阶段、每个大板块均可折叠），点击标题栏可展开。点击「编辑模式」可新增/删除事项。</div>
+    <div class="timeline">
+      <div class="tl-item" data-start-date="2026-07-25" data-end-date="2026-08-15">
+        <div class="tl-date editable">7月底 ~ 8月中旬（约第1~3周）</div>
+        <div class="tl-title editable">核心预订阶段</div>
+        <div class="tl-desc editable">
+          <ul>
+            <li><b>婚宴酒店已定</b>：于都亿豪宴会中心（长征大道79号，县公安局对面），酒店自带婚庆策划+礼服+伴郎伴娘服</li>
+            <li><b>预订四大金刚</b>：确认酒店自带的司仪/化妆/摄影/摄像是否满足需求，如需额外加配则尽快锁定</li>
+            <li><b>与婚庆策划对接</b>：与亿豪宴会中心婚庆团队确认布置风格、舞台灯光、花艺方案</li>
+            <li><b>预定婚车</b>：主婚车1辆+跟车3~5辆，国庆租车价高，尽早定</li>
+            <li><b>试纱定纱</b>：在亿豪试穿酒店提供的主婚纱/秀禾服/敬酒服，确认尺码和款式；新郎西装定制</li>
+            <li><b>确定伴郎伴娘团</b>：各4~6人，建群沟通，确认酒店提供的伴郎伴娘服尺码</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tl-item" data-start-date="2026-08-16" data-end-date="2026-09-05">
+        <div class="tl-date editable">8月中旬 ~ 9月初（约第4~6周）</div>
+        <div class="tl-title editable">宾客与细节确定阶段</div>
+        <div class="tl-desc editable">
+          <ul>
+            <li><b>拟定宾客名单</b>：双方各自列名单，统计桌数（每桌10人）</li>
+            <li><b>发送请柬</b>：长辈用纸质请柬，朋友同事可电子请柬，统计到场人数</li>
+            <li><b>酒店试菜</b>：带家人去亿豪宴会中心试菜，确认婚宴菜单（客家菜为主，兼顾潮汕口味）</li>
+            <li><b>新娘试妆定妆</b>：确认酒店自带化妆师或外请，带上婚纱试妆，确定当天3套造型</li>
+            <li><b>确定接亲路线</b>：规划从酒店出发→县城绕行→回家的完整路线</li>
+            <li><b>购置新房物品</b>：床上四件套（红色）、喜字装饰、拉花气球等</li>
+            <li><b>与司仪面谈</b>：敲定仪式流程、背景音乐、串场词</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tl-item" data-start-date="2026-09-06" data-end-date="2026-09-20">
+        <div class="tl-date editable">9月初 ~ 9月20日（约第7~8周）</div>
+        <div class="tl-title editable">物资采购与人员安排</div>
+        <div class="tl-desc editable">
+          <ul>
+            <li><b>下聘物资准备</b>（9月28日前往潮汕）：聘金、金饰、四式礼/六式礼、喜饼等</li>
+            <li><b>喜糖喜烟喜酒采购</b>：按桌数+备用，白酒红酒啤酒饮料</li>
+            <li><b>红包准备</b>：各种金额红包（堵门红包、改口费、工作人员等）</li>
+            <li><b>确定人员分工</b>：总管、签到、接待、车队队长、物资管理等</li>
+            <li><b>外地宾客住宿安排</b>：潮汕女方家属来于都的住宿</li>
+            <li><b>最终礼服试穿</b>：在亿豪确认所有礼服合身，取衣/交接日期</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tl-item" data-start-date="2026-09-21" data-end-date="2026-09-27">
+        <div class="tl-date editable">9月21日 ~ 9月27日（倒计时10天）</div>
+        <div class="tl-title editable">最终确认阶段</div>
+        <div class="tl-desc editable">
+          <ul>
+            <li><b>9月21~25日</b>：去银行换崭新钞票→分装各类红包；确认所有供应商到场时间</li>
+            <li><b>9月26日</b>：最后一次确认亿豪宴会中心桌数、菜单、酒水数量；与司仪确认最终流程</li>
+            <li><b>9月27日</b>：将烟酒糖茶提前运至亿豪存放；检查所有服装鞋饰是否齐全</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tl-item" data-start-date="2026-09-28" data-end-date="2026-09-28">
+        <div class="tl-date editable">9月28日（周日）· 下聘日</div>
+        <div class="tl-title editable">前往潮汕下聘（行聘礼）</div>
+        <div class="tl-desc editable">
+          <ul>
+            <li><b>上午</b>：携带聘金、金饰、四式礼/六式礼前往女方家</li>
+            <li><b>中午</b>：在女方家用餐，女方回礼（鸳鸯蕉、大桔等）</li>
+            <li><b>下午</b>：返回于都，开始布置婚礼环境（家中+女方接亲酒店）</li>
+            <li><b>当晚</b>：家中布置喜字、拉花、气球、婚房装饰；确认酒店接亲房间的布置</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tl-item" data-start-date="2026-09-29" data-end-date="2026-09-30">
+        <div class="tl-date editable">9月29日 ~ 9月30日</div>
+        <div class="tl-title editable">最后冲刺 · 彩排</div>
+        <div class="tl-desc editable">
+          <ul>
+            <li><b>9月29日</b>：新娘美甲、脱毛、护肤；新郎理发；伴郎伴娘服装试穿确认</li>
+            <li><b>9月30日下午</b>：与亿豪婚庆团队对接搭建，确认舞台/灯光/花艺</li>
+            <li><b>9月30日晚</b>：婚礼彩排（走仪式流程），分装当天礼服鞋饰，分配物资到人</li>
+            <li><b>当晚</b>：再次确认婚车路线及到达时间；确认所有人员分工；早点休息</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tl-item" data-start-date="2026-10-01" data-end-date="2026-10-01">
+        <div class="tl-date editable">10月1日（周四）· 婚礼当天</div>
+        <div class="tl-title editable">大日子！详见下方当天流程表</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 二、9月28日下聘物资 -->
+  <div class="section" data-start-date="2026-09-28" data-end-date="2026-09-28">
+    <h2 class="section-title editable">二、9月28日潮汕下聘物资清单</h2>
+    <div class="tip-box editable">
+      <strong>潮汕下聘习俗要点：</strong>聘礼必须成双（偶数），实物必备四式以上。聘金尾数取双数（如66666/88888"好命人"（家庭美满的长辈）陪同送聘。女方会回礼：鸳鸯蕉、大桔、猪心（象征同心）、肚兜等。收到聘礼后女方煮甜蛋面招待男方。
+    </div>
+    <div class="table-wrap">
+      <table class="editable">
+        <thead>
+          <tr><th>类别</th><th>物品</th><th>数量</th><th>备注</th></tr>
+        </thead>
+        <tbody>
+          <tr><td rowspan="2"><span class="tag tag-red">聘金</span></td><td>聘金（现金）</td><td>商定金额</td><td>尾数取双数，红布袋装好，袋口系红绳</td></tr>
+          <tr><td>聘金红包封</td><td>1个</td><td>大号红包袋装聘金</td></tr>
+          <tr><td rowspan="4"><span class="tag tag-gold">金饰</span></td><td>手镯</td><td>1只</td><td>成双成对，最核心的首饰</td></tr>
+          <tr><td>金项链</td><td>1条</td><td></td></tr>
+          <tr><td>金戒指</td><td>1对（2只）</td><td>订婚对戒</td></tr>
+          <tr><td>金耳环</td><td>1对</td><td></td></tr>
+          <tr><td rowspan="4"><span class="tag tag-blue">四式礼</span></td><td>大吉（潮州柑/橘子）</td><td>双数（如8个/12个）</td><td>谐音"吉"，必备</td></tr>
+          <tr><td>白糖/冰糖</td><td>双数包</td><td>寓意甜甜蜜蜜</td></tr>
+          <tr><td>面条（长寿面）</td><td>双数包</td><td>寓意长寿，抹红封面条</td></tr>
+          <tr><td>喜饼/饼食</td><td>双数盒</td><td>用于分赠亲邻报喜</td></tr>
+          <tr><td rowspan="3"><span class="tag tag-red">回程准备</span></td>
+            <td>红绳/红布袋</td><td>若干</td><td>装回礼用</td></tr>
+          <tr><td>男方随行红包</td><td>若干</td><td>给女方长辈/小孩的红包</td></tr>
+          <tr><td>甜蛋面回礼碗</td><td>—</td><td>女方会准备，男方需配合</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip-box editable" style="margin-top:10px;">
+      <strong>女方预期回礼（需提前了解）：</strong>大桔、鸳鸯蕉（并生香蕉）、红鸡蛋12个、鸳鸯糖、部分饼食退回。提前跟女方家沟通好回礼细节，避免当天手忙脚乱。
+    </div>
+  </div>
+
+  <!-- 三、婚礼当天流程 -->
+  <div class="section" data-start-date="2026-10-01" data-end-date="2026-10-01">
+    <h2 class="section-title editable">三、10月1日婚礼当天流程</h2>
+    <div class="tip-box editable">
+      <strong>总体节奏：</strong>7:00出发接亲 → 县城绕行 → 9:00到家 → 10:00出发去酒店 → 11:30开席
+    </div>
+    <div class="day-flow">
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">05:30</div><div class="d editable">凌晨</div></div>
+        <div class="flow-body">
+          <div class="title editable">新娘化妆 / 新郎准备</div>
+          <div class="detail editable">化妆师到达女方酒店房间开始妆造（秀禾服造型）；新郎在家整理仪容、穿好西装</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 化妆师到位</label>
+            <label><input type="checkbox"> 秀禾服+头饰</label>
+            <label><input type="checkbox"> 新郎西装皮鞋</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">06:00</div><div class="d editable">清晨</div></div>
+        <div class="flow-body">
+          <div class="title editable">婚车集合 · 摄影师到位</div>
+          <div class="detail editable">婚车队在男方家或指定地点集合，扎花车；摄影师/摄像师到位开始拍摄花絮</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 花车装饰</label>
+            <label><input type="checkbox"> 车队编号排序</label>
+            <label><input type="checkbox"> 接亲道具清点</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">07:00</div><div class="d editable">出发接亲</div></div>
+        <div class="flow-body">
+          <div class="title editable">婚车出发前往女方酒店</div>
+          <div class="detail editable">从于都家中出发，婚车队前往女方下榻酒店；伴郎团携带堵门道具、红包、捧花</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 捧花</label>
+            <label><input type="checkbox"> 堵门红包</label>
+            <label><input type="checkbox"> 接亲游戏道具</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">07:15</div><div class="d editable">酒店接亲</div></div>
+        <div class="flow-body">
+          <div class="title editable">堵门游戏 · 接新娘</div>
+          <div class="detail editable">伴娘团堵门→伴郎闯关发红包→接亲游戏→新郎献捧花→找婚鞋→新娘出门</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 堵门游戏清单</label>
+            <label><input type="checkbox"> 红包充足</label>
+            <label><input type="checkbox"> 婚鞋藏好</label>
+            <label><input type="checkbox"> 敬茶道具</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">08:00</div><div class="d editable">敬茶</div></div>
+        <div class="flow-body">
+          <div class="title editable">女方敬茶改口 · 出门</div>
+          <div class="detail editable">新娘向父母敬茶，父母给改口费红包；新郎叫爸妈；合影留念；新娘由兄弟/新郎背出门上车</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 改口费红包</label>
+            <label><input type="checkbox"> 敬茶茶具</label>
+            <label><input type="checkbox"> 合影</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">08:20</div><div class="d editable">绕城</div></div>
+        <div class="flow-body">
+          <div class="title editable">婚车县城绕行 · 拍照</div>
+          <div class="detail editable">从酒店出发沿县城主干道绕行一圈（途经渡江大桥/长征广场等标志性地点），摄影师沿途跟拍</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 绕行路线已规划</label>
+            <label><input type="checkbox"> 鞭炮/礼炮</label>
+            <label><input type="checkbox"> 车队对讲机</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">09:00</div><div class="d editable">到家</div></div>
+        <div class="flow-body">
+          <div class="title editable">回男家 ·  拜堂</div>
+          <div class="detail editable">
+            新娘下车→进门→拜堂：一拜天地、二拜祖宗、三拜高堂（父母）、夫妻对拜→合卺酒（交杯酒）→撒"早生贵子"（红枣花生桂圆莲子撒床上）
+          </div>
+          <div class="checklist">
+            <label><input type="checkbox"> 红盖头</label>
+            <label><input type="checkbox"> 合卺酒杯</label>
+            <label><input type="checkbox"> 早生贵子四件套</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">09:10</div><div class="d editable">男方敬茶</div></div>
+        <div class="flow-body">
+          <div class="title editable">向男方父母敬茶改口</div>
+          <div class="detail editable">新娘向公婆敬茶，改口叫爸妈，父母给改口费红包；与男方亲属合影</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 改口费红包</label>
+            <label><input type="checkbox"> 敬茶茶具</label>
+            <label><input type="checkbox"> 跪垫</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">09:30</div><div class="d editable">换装</div></div>
+        <div class="flow-body">
+          <div class="title editable">新娘换主婚纱 · 补妆</div>
+          <div class="detail editable">从秀禾服换成主婚纱（仪式纱），化妆师补妆；新郎整理仪容</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 主婚纱</label>
+            <label><input type="checkbox"> 头纱</label>
+            <label><input type="checkbox"> 婚鞋换好</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">10:00</div><div class="d editable">出发</div></div>
+        <div class="flow-body">
+          <div class="title editable">出发前往亿豪宴会中心</div>
+          <div class="detail editable">婚车出发前往酒店；物资组提前到酒店检查布置（喜字、签到台、桌卡、酒水摆放）</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 手捧花</label>
+            <label><input type="checkbox"> 戒指</label>
+            <label><input type="checkbox"> 誓词卡</label>
+            <label><input type="checkbox"> 酒水烟糖已到位</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">10:20</div><div class="d editable">到店</div></div>
+        <div class="flow-body">
+          <div class="title editable">到达酒店 · 最终检查</div>
+          <div class="detail editable">新人到达酒店休息室；总管检查签到台、座位表、舞台搭建、音响设备；与司仪最后确认流程</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 签到台就绪</label>
+            <label><input type="checkbox"> 座位表/桌卡</label>
+            <label><input type="checkbox"> 舞台灯光音响</label>
+            <label><input type="checkbox"> 司仪对接</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">10:45</div><div class="d editable">迎宾</div></div>
+        <div class="flow-body">
+          <div class="title editable">迎宾签到</div>
+          <div class="detail editable">新人在酒店门口迎宾，与宾客合影；签到台收礼金、发放伴手礼/喜糖</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 签到本+笔</label>
+            <label><input type="checkbox"> 礼金箱</label>
+            <label><input type="checkbox"> 伴手礼/喜糖</label>
+            <label><input type="checkbox"> 迎宾花艺</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">11:30</div><div class="d editable">开席</div></div>
+        <div class="flow-body">
+          <div class="title editable">婚宴仪式开始</div>
+          <div class="detail editable">
+            司仪开场→新郎入场→新娘挽父亲入场→交接仪式→证婚人致辞→交换戒指→拥吻→双方父母致辞→新人敬酒→互动游戏/抽奖→送客
+          </div>
+          <div class="checklist">
+            <label><input type="checkbox"> 仪式音乐</label>
+            <label><input type="checkbox"> 交换戒指</label>
+            <label><input type="checkbox"> 誓词</label>
+            <label><input type="checkbox"> 敬酒服</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">12:00</div><div class="d editable">敬酒</div></div>
+        <div class="flow-body">
+          <div class="title editable">逐桌敬酒</div>
+          <div class="detail editable">新娘换敬酒服，新人逐桌敬酒致谢；注意由长辈桌开始→亲戚→朋友→同事</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 敬酒服</label>
+            <label><input type="checkbox"> 敬酒杯</label>
+            <label><input type="checkbox"> 桌号顺序表</label>
+          </div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-time"><div class="t editable">13:30</div><div class="d editable">收尾</div></div>
+        <div class="flow-body">
+          <div class="title editable">送客 · 清点物资</div>
+          <div class="detail editable">新人在门口送客；物资组清点剩余烟酒糖、回收装饰物；结清酒店尾款</div>
+          <div class="checklist">
+            <label><input type="checkbox"> 剩余酒水回收</label>
+            <label><input type="checkbox"> 礼金清点</label>
+            <label><input type="checkbox"> 酒店尾款</label>
+            <label><input type="checkbox"> 摄影素材确认</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 四、物资采购清单 -->
+  <div class="section" data-start-date="2026-07-25" data-end-date="2026-09-30">
+    <h2 class="section-title editable">四、物资采购总清单</h2>
+    <div class="tip-box editable">
+      <strong>提示：</strong>标注<span class="tag tag-hotel">酒店提供</span>的物品由亿豪宴会中心自带，无需额外购买。其他物品需要自行采购。点击复选框可勾选已采购的物品。
+    </div>
+
+    <div class="goods-grid">
+      <!-- 新娘服饰 - 酒店提供 -->
+      <div class="goods-card hotel-provided">
+        <h4>新娘服饰 <span class="tag tag-hotel">酒店提供</span></h4>
+        <ul>
+          <li><input type="checkbox"> 主婚纱（仪式纱）<span class="note">酒店仪式穿</span></li>
+          <li><input type="checkbox"> 秀禾服/龙凤褂<span class="note">接亲时穿</span></li>
+          <li><input type="checkbox"> 敬酒服<span class="note">敬酒时穿</span></li>
+          <li><input type="checkbox"> 头纱</li>
+          <li><input type="checkbox"> 头饰 / 皇冠</li>
+        </ul>
+        <div style="margin-top:8px;font-size:12px;color:#6c3483;">需自行准备：婚鞋（高跟+平底备用）、晨袍、隐形内衣、红色袜子、红盖头</div>
+      </div>
+
+      <!-- 新郎服饰 - 需自行购买 -->
+      <div class="goods-card">
+        <h4>新郎服饰 <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 西装（深色，建议定制）</li>
+          <li><input type="checkbox"> 白衬衫2件<span class="note">备用</span></li>
+          <li><input type="checkbox"> 领带/领结（红色）</li>
+          <li><input type="checkbox"> 皮鞋（黑色）</li>
+          <li><input type="checkbox"> 皮带（黑色）</li>
+          <li><input type="checkbox"> 袖扣 / 口袋巾</li>
+          <li><input type="checkbox"> 胸花</li>
+          <li><input type="checkbox"> 红色袜子2双</li>
+        </ul>
+      </div>
+      <!-- 伴郎伴娘 - 酒店提供 -->
+      <div class="goods-card hotel-provided">
+        <h4>伴郎伴娘服饰 <span class="tag tag-hotel">酒店提供</span></h4>
+        <ul>
+          <li><input type="checkbox"> 伴娘服（统一样式）</li>
+          <li><input type="checkbox"> 伴郎衬衫+马甲/西装</li>
+          <li><input type="checkbox"> 伴郎领结</li>
+        </ul>
+        <div style="margin-top:8px;font-size:12px;color:#6c3483;">需自行准备：伴娘晨袍、手腕花/胸花、伴郎伴娘礼盒</div>
+      </div>
+
+      <!-- 婚房布置 -->
+      <div class="goods-card">
+        <h4>婚房布置 <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 红色四件套（床单被套枕套）</li>
+          <li><input type="checkbox"> 压床娃娃1对</li>
+          <li><input type="checkbox"> 大喜字（贴门/窗/家具）</li>
+          <li><input type="checkbox"> 小喜字（贴镜子/电器等）</li>
+          <li><input type="checkbox"> 拉花/流苏</li>
+          <li><input type="checkbox"> 气球（红色+金色）</li>
+          <li><input type="checkbox"> 床上撒花花瓣</li>
+          <li><input type="checkbox"> 早生贵子四件套<span class="note">红枣+花生+桂圆+莲子</span></li>
+          <li><input type="checkbox"> 喜庆碗筷杯</li>
+          <li><input type="checkbox"> 红色拖鞋</li>
+        </ul>
+      </div>
+
+      <!-- 仪式用品 -->
+      <div class="goods-card">
+        <h4>仪式用品 <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 结婚戒指+戒指盒/戒枕</li>
+          <li><input type="checkbox"> 手捧花</li>
+          <li><input type="checkbox"> 胸花（新郎+父母+证婚人+司仪）</li>
+          <li><input type="checkbox"> 腕花（伴娘）</li>
+          <li><input type="checkbox"> 敬茶茶具（红色，含茶杯+茶壶）</li>
+          <li><input type="checkbox"> 跪垫2个</li>
+          <li><input type="checkbox"> 合卺酒杯（红色交杯酒杯）</li>
+          <li><input type="checkbox"> 誓词卡2张</li>
+        </ul>
+      </div>
+
+      <!-- 请柬 -->
+      <div class="goods-card">
+        <h4>请柬 & 签到 <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 纸质请柬<span class="note">长辈用</span></li>
+          <li><input type="checkbox"> 电子请柬模板<span class="note">朋友同事用</span></li>
+          <li><input type="checkbox"> 签到本2本</li>
+          <li><input type="checkbox"> 签到笔（黑色）</li>
+          <li><input type="checkbox"> 桌卡<span class="note">按桌数</span></li>
+          <li><input type="checkbox"> 礼金箱（带锁）</li>
+        </ul>
+      </div>
+
+      <!-- 喜糖喜烟 -->
+      <div class="goods-card">
+        <h4>喜糖 · 喜烟 · 喜酒 <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 喜糖盒<span class="note">按桌数x10+备用100</span></li>
+          <li><input type="checkbox"> 喜糖/巧克力</li>
+          <li><input type="checkbox"> 伴手礼盒</li>
+          <li><input type="checkbox"> 白酒<span class="note">按桌1瓶+备用</span></li>
+          <li><input type="checkbox"> 红酒<span class="note">按桌1瓶</span></li>
+          <li><input type="checkbox"> 啤酒</li>
+          <li><input type="checkbox"> 饮料（可乐/雪碧/果汁）</li>
+          <li><input type="checkbox"> 喜烟<span class="note">按桌2包+散烟</span></li>
+          <li><input type="checkbox"> 茶叶</li>
+        </ul>
+      </div>
+
+      <!-- 红包 -->
+      <div class="goods-card">
+        <h4>红包（各类） <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 大红包<span class="note">装改口费，4个</span></li>
+          <li><input type="checkbox"> 中红包<span class="note">给长辈/证婚人等</span></li>
+          <li><input type="checkbox"> 小红包<span class="note">堵门用，50~100个</span></li>
+          <li><input type="checkbox"> 伴郎伴娘红包</li>
+          <li><input type="checkbox"> 备用红包<span class="note">应急用</span></li>
+          <li><input type="checkbox"> 崭新钞票<span class="note">去银行换取</span></li>
+        </ul>
+      </div>
+
+      <!-- 接亲游戏 -->
+      <div class="goods-card">
+        <h4>接亲道具 <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 堵门游戏道具包</li>
+          <li><input type="checkbox"> 指压板</li>
+          <li><input type="checkbox"> 猜谜卡片</li>
+          <li><input type="checkbox"> 便利贴</li>
+        </ul>
+      </div>
+
+      <!-- 急救包 -->
+      <div class="goods-card">
+        <h4>婚礼急救包 <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 针线包</li>
+          <li><input type="checkbox"> 别针/双面胶</li>
+          <li><input type="checkbox"> 创可贴</li>
+          <li><input type="checkbox"> 防磨脚贴</li>
+          <li><input type="checkbox"> 吸管<span class="note">喝水不花妆</span></li>
+          <li><input type="checkbox"> 纸巾/湿巾</li>
+          <li><input type="checkbox"> 吸油纸</li>
+          <li><input type="checkbox"> 充电宝+数据线</li>
+          <li><input type="checkbox"> 小零食<span class="note">防低血糖</span></li>
+          <li><input type="checkbox"> 备用丝袜</li>
+        </ul>
+      </div>
+
+      <!-- 酒店接亲房 -->
+      <div class="goods-card">
+        <h4>女方接亲酒店布置 <span class="tag tag-red">需自备</span></h4>
+        <ul>
+          <li><input type="checkbox"> 大喜字（贴门）</li>
+          <li><input type="checkbox"> 气球布置</li>
+          <li><input type="checkbox"> 花瓣</li>
+          <li><input type="checkbox"> 早生贵子四件套</li>
+          <li><input type="checkbox"> 红色拖鞋</li>
+          <li><input type="checkbox"> 敬茶道具</li>
+          <li><input type="checkbox"> 水果盘+干果盘</li>
+          <li><input type="checkbox"> 喜庆纸杯</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 五、人员分工 -->
+  <div class="section" data-start-date="2026-07-25" data-end-date="2026-09-30">
+    <h2 class="section-title editable">五、婚礼当天人员分工</h2>
+    <div class="tip-box editable">
+      <strong>建议提前1~2周召开家庭会议</strong>，把以下角色落实到具体人，建群拉好，每人发一份当天流程表。点击「编辑模式」后，可增删角色、填写负责人姓名、编辑职责描述。
+    </div>
+    <div class="role-grid">
+      <div class="role-card">
+        <div class="role-icon">指</div>
+        <div class="role-info">
+          <div class="role-name editable">总指挥（1人）</div>
+          <div class="role-desc editable">统筹全局，协调各环节，处理突发状况</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">财</div>
+        <div class="role-info">
+          <div class="role-name editable">财务（1~2人）</div>
+          <div class="role-desc editable">保管所有红包、礼金箱，当天开支经手</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">签</div>
+        <div class="role-info">
+          <div class="role-name editable">签到组（2~3人）</div>
+          <div class="role-desc editable">酒店门口签到台，收礼金、发伴手礼</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">迎</div>
+        <div class="role-info">
+          <div class="role-name editable">接待组（2~3人）</div>
+          <div class="role-desc editable">门口迎宾引导，安排外地宾客座位住宿</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">车</div>
+        <div class="role-info">
+          <div class="role-name editable">车队队长（1人）</div>
+          <div class="role-desc editable">婚车编排、路线导航、对讲机调度、时间把控</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">物</div>
+        <div class="role-info">
+          <div class="role-name editable">物资管理（1~2人）</div>
+          <div class="role-desc editable">烟酒糖茶/红包/道具的保管与分发</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">酒</div>
+        <div class="role-info">
+          <div class="role-name editable">酒店协调（1人）</div>
+          <div class="role-desc editable">对接亿豪上菜时间、音响灯光、桌位调整</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">郎</div>
+        <div class="role-info">
+          <div class="role-name editable">伴郎团（4~6人）</div>
+          <div class="role-desc editable">配合堵门游戏、保管戒指/捧花、协助敬酒</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">娘</div>
+        <div class="role-info">
+          <div class="role-name editable">伴娘团（4~6人）</div>
+          <div class="role-desc editable">陪伴新娘、管理随身物品、协助换装</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">影</div>
+        <div class="role-info">
+          <div class="role-name editable">摄影摄像对接（1人）</div>
+          <div class="role-desc editable">确保拍到关键环节，安排合影顺序</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">炮</div>
+        <div class="role-info">
+          <div class="role-name editable">鞭炮/礼炮（1~2人）</div>
+          <div class="role-desc editable">负责到家/到酒店时放鞭炮/礼炮</div>
+        </div>
+        <div class="role-person editable" contenteditable="false">负责人：___</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 六、婚宴酒店信息 -->
+  <div class="section" data-start-date="2026-07-01" data-end-date="2026-07-27">
+    <h2 class="section-title editable">六、婚宴酒店信息（已定）</h2>
+    <div class="hotel-card editable">
+      <div class="hotel-badge">已预订</div>
+      <h4>于都亿豪宴会中心</h4>
+      <p>地址：于都县长征大道79号（县公安局对面）</p>
+      <p>电话：15879722030 / 18000278097</p>
+      <p>特点：位于老城区，多个风格各异的宴会厅，专业宴会策划团队，厨师团队擅长客家菜及各类菜系</p>
+      <div class="hotel-services">
+        <strong>酒店自带服务（无需额外找供应商）：</strong>
+        <br>婚庆策划（舞台布置/灯光花艺/仪式流程）
+        <br>婚纱礼服（主婚纱/秀禾服/敬酒服/头纱头饰）
+        <br>伴郎伴娘服（统一款式）
+        <br>司仪/主持（需确认是否含或需额外安排）
+        <br>化妆师（需确认是否含或需额外安排）
+        <br>摄影摄像（需确认是否含或需额外安排）
+      </div>
+    </div>
+    <div class="tip-box editable">
+      <strong>需跟亿豪确认的关键问题：</strong>
+      <br>1. 四大金刚（司仪/化妆/摄影/摄像）是否包含在套餐内？如果不包含需自行外请
+      <br>2. 婚纱礼服试穿时间安排？取衣/还衣流程？
+      <br>3. 婚庆布置的具体方案和风格选择？
+      <br>4. 婚宴菜单试菜时间？是否可定制潮汕口味菜品？
+      <br>5. 酒水是否自带？是否收开瓶费？
+      <br>6. 国庆当天是否有其他婚宴同时进行？如何错峰？
+      <br>7. 停车位数量？是否有伴手礼/签到台区域？
+    </div>
+    <div class="tip-box editable" style="border-left-color: var(--blue); background: #ebf5fb;">
+      <strong>女方接亲酒店建议：</strong>预订一家靠近亿豪宴会中心的酒店房间（方便新娘化妆和接亲流程），建议提前1天入住布置。可考虑亿豪附近的长征宾馆或维也纳酒店。
+    </div>
+  </div>
+
+  <!-- 底部 -->
+  <div class="footer">
+    <p>百年好合 永结同心 囍</p>
+    <p style="margin-top:4px;">本方案根据于都客家婚俗 + 潮汕下聘习俗制定</p>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  // 倒计时
+  var weddingDate = new Date("2026-10-01T00:00:00");
+  var now = new Date();
+  var diff = Math.ceil((weddingDate - now) / (1000 * 60 * 60 * 24));
+  var el = document.getElementById("countdown");
+  if (diff > 0) {
+    el.textContent = "距婚礼还有 " + diff + " 天";
+  } else if (diff === 0) {
+    el.textContent = "今天就是婚礼日！";
+  } else {
+    el.textContent = "婚礼已圆满完成";
+  }
+
+  // 编辑模式
+  var editMode = false;
+  var STORAGE_KEY = "wedding_plan_data";
+  var STORAGE_VERSION = "v3_goods_edit";
+
+  // 版本检查：旧数据结构不兼容时清除
+  try {
+    var savedVer = localStorage.getItem("wedding_plan_version");
+    if (savedVer !== STORAGE_VERSION) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem("wedding_plan_version", STORAGE_VERSION);
+    }
+  } catch(e) {}
+
+  window.toggleEdit = function() {
+    editMode = !editMode;
+    document.body.classList.toggle("edit-mode", editMode);
+    var btn = document.getElementById("btnEdit");
+    btn.textContent = editMode ? "退出编辑" : "编辑模式";
+    btn.classList.toggle("active", editMode);
+
+    var editables = document.querySelectorAll(".editable");
+    editables.forEach(function(el) {
+      el.setAttribute("contenteditable", editMode ? "true" : "false");
+    });
+
+    // 人员分工的负责人栏始终可编辑
+    var persons = document.querySelectorAll(".role-person");
+    persons.forEach(function(el) {
+      el.setAttribute("contenteditable", "true");
+    });
+
+    // 物资清单：增删控件 + 文字可编辑
+    setupGoodsEditControls();
+    setupTimelineEditControls();
+    setupFlowChecklistControls();
+    setupTableRowControls();
+    setupRoleCardControls();
+	    setupFlowCardControls();
+    document.querySelectorAll('.goods-item-text, .goods-card-title-edit').forEach(function(el) {
+      el.setAttribute("contenteditable", editMode ? "true" : "false");
+    });
+  };
+
+  // 自动保存
+  var saveTimer = null;
+  function autoSave() {
+    var data = {};
+    // 保存editable内容（排除goods-grid内的）
+    var edIdx = 0;
+    document.querySelectorAll(".editable").forEach(function(el) {
+      if (el.closest('.goods-grid')) return;
+      data["ed_" + edIdx] = el.innerHTML;
+      edIdx++;
+    });
+    var persons = document.querySelectorAll(".role-person");
+    persons.forEach(function(el, i) {
+      data["rp_" + i] = el.innerHTML;
+    });
+    // 保存复选框状态（排除goods-grid内的）
+    var cbIdx = 0;
+    document.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      if (cb.closest('.goods-grid')) return;
+      data["cb_" + cbIdx] = cb.checked;
+      cbIdx++;
+    });
+    // 保存物资清单整体结构 + 复选框状态（不修改DOM）
+    var goodsGrid = document.querySelector('.goods-grid');
+    if (goodsGrid) {
+      data["goods_grid_html"] = goodsGrid.innerHTML;
+      // 同时保存物资清单内复选框状态
+      var goodsCbStates = [];
+      goodsGrid.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+        goodsCbStates.push(cb.checked);
+      });
+      data["goods_cb_states"] = goodsCbStates;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch(e) {}
+  }
+
+  window.saveData = function() {
+    autoSave();
+    var status = document.getElementById("saveStatus");
+    status.classList.add("show");
+    status.textContent = "已保存";
+    setTimeout(function() {
+      status.classList.remove("show");
+    }, 2000);
+  };
+
+  window.resetData = function() {
+    if (confirm("确定要重置所有修改吗？这将清除所有已编辑内容和勾选状态，恢复到原始方案。")) {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  };
+
+  // 加载已保存数据
+  function loadData() {
+    var saved = null;
+    try {
+      saved = localStorage.getItem(STORAGE_KEY);
+    } catch(e) { return; }
+    if (!saved) return;
+
+    var data = JSON.parse(saved);
+
+    // 先恢复物资清单整体结构
+    if (data["goods_grid_html"] !== undefined) {
+      var goodsGrid = document.querySelector('.goods-grid');
+      if (goodsGrid) goodsGrid.innerHTML = data["goods_grid_html"];
+    }
+    // 恢复物资清单复选框状态
+    if (data["goods_cb_states"] !== undefined) {
+      var goodsGrid = document.querySelector('.goods-grid');
+      if (goodsGrid) {
+        goodsGrid.querySelectorAll('input[type="checkbox"]').forEach(function(cb, i) {
+          if (data["goods_cb_states"][i] !== undefined) {
+            cb.checked = data["goods_cb_states"][i];
+          }
+        });
+      }
+    }
+
+    // 恢复editable内容（排除goods-grid内的）
+    var edIdx = 0;
+    document.querySelectorAll(".editable").forEach(function(el) {
+      if (el.closest('.goods-grid')) return;
+      if (data["ed_" + edIdx] !== undefined) {
+        el.innerHTML = data["ed_" + edIdx];
+      }
+      edIdx++;
+    });
+    var persons = document.querySelectorAll(".role-person");
+    persons.forEach(function(el, i) {
+      if (data["rp_" + i] !== undefined) {
+        el.innerHTML = data["rp_" + i];
+      }
+    });
+    // 恢复其他复选框（物资清单的已由goods_cb_states恢复）
+    var cbIdx = 0;
+    document.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      if (cb.closest('.goods-grid')) return;
+      if (data["cb_" + cbIdx] !== undefined) {
+        cb.checked = data["cb_" + cbIdx];
+      }
+      cbIdx++;
+    });
+  }
+
+  // 自动保存（每次修改后3秒自动保存）
+  document.addEventListener("input", function() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(autoSave, 3000);
+  });
+
+  // === 为缺少勾选框的列表项添加勾选框 ===
+  function addMissingCheckboxes() {
+    // 1. 时间线列表项添加勾选框
+    document.querySelectorAll('.tl-desc li').forEach(function(li) {
+      if (li.querySelector('input[type="checkbox"]')) return;
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      li.insertBefore(cb, li.firstChild);
+    });
+    // 2. 表格添加勾选列（仅对没有勾选框的表格）
+    document.querySelectorAll('table').forEach(function(table) {
+      if (table.querySelector('input[type="checkbox"]')) return;
+      var thead = table.querySelector('thead tr');
+      if (thead) {
+        var th = document.createElement('th');
+        th.className = 'cb-th';
+        th.textContent = '\u2713';
+        thead.insertBefore(th, thead.firstChild);
+      }
+      table.querySelectorAll('tbody tr').forEach(function(tr) {
+        var firstTd = tr.querySelector('td');
+        if (!firstTd) return;
+        if (tr.style.fontWeight === 'bold' || firstTd.textContent.indexOf('合计') >= 0) return;
+        var td = document.createElement('td');
+        td.className = 'cb-td';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        td.appendChild(cb);
+        tr.insertBefore(td, tr.firstChild);
+      });
+    });
+    // 3. 角色卡添加勾选框
+    document.querySelectorAll('.role-card').forEach(function(card) {
+      if (card.querySelector('.role-cb')) return;
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'role-cb';
+      cb.title = '标记已确认';
+      card.appendChild(cb);
+    });
+  }
+
+  // 添加勾选框（恢复数据前）
+  addMissingCheckboxes();
+
+  // 页面加载时恢复数据
+  loadData();
+
+  // 再次添加勾选框（恢复数据后，补回被覆盖的）
+  addMissingCheckboxes();
+
+  // === 物资清单增删功能 ===
+  function wrapItemText(li) {
+    if (li.querySelector('.goods-item-text')) return;
+    var checkbox = li.querySelector('input[type="checkbox"]');
+    if (!checkbox) return;
+    var note = li.querySelector('.note');
+    var delBtn = li.querySelector('.del-item-btn');
+    // 提取文本：遍历所有文本节点，排除note和del-btn内的文字
+    var text = '';
+    li.childNodes.forEach(function(node) {
+      if (node.nodeType === 3) {
+        // 文本节点
+        text += node.textContent;
+      } else if (node.nodeType === 1) {
+        // 元素节点，只取非.note非.del-item-btn的元素中的纯文本
+        if (!node.classList || (!node.classList.contains('note') && !node.classList.contains('del-item-btn'))) {
+          text += node.textContent;
+        }
+      }
+    });
+    text = text.trim();
+    if (!text) return;
+    // 移除所有已有的文本节点和纯文本元素（保留checkbox、note、del-btn）
+    var toRemove = [];
+    li.childNodes.forEach(function(node) {
+      if (node.nodeType === 3) {
+        toRemove.push(node);
+      } else if (node.nodeType === 1 && !node.classList.contains('note') && !node.classList.contains('del-item-btn') && node.tagName !== 'INPUT') {
+        toRemove.push(node);
+      }
+    });
+    toRemove.forEach(function(n) { n.remove(); });
+    // 插入goods-item-text span（在checkbox之后、note/del-btn之前）
+    var span = document.createElement('span');
+    span.className = 'goods-item-text';
+    span.textContent = text;
+    var refNode = note || delBtn;
+    if (refNode) {
+      li.insertBefore(span, refNode);
+    } else {
+      li.appendChild(span);
+    }
+    // 确保checkbox后面有空格
+    var cb = li.querySelector('input[type="checkbox"]');
+    if (cb && cb.nextSibling && cb.nextSibling.nodeType === 3) {
+      // 已有文本节点
+    } else if (cb) {
+      li.insertBefore(document.createTextNode(' '), cb.nextSibling);
+    }
+  }
+
+  function createGoodsItem(text) {
+    var li = document.createElement('li');
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    li.appendChild(cb);
+    li.appendChild(document.createTextNode(' '));
+    var span = document.createElement('span');
+    span.className = 'goods-item-text';
+    span.textContent = text || '新物品';
+    li.appendChild(span);
+    var del = document.createElement('span');
+    del.className = 'del-item-btn';
+    del.textContent = '\u00d7';
+    del.title = '删除';
+    li.appendChild(del);
+    return li;
+  }
+
+  function createGoodsCard(title) {
+    var card = document.createElement('div');
+    card.className = 'goods-card';
+    var h4 = document.createElement('h4');
+    var titleSpan = document.createElement('span');
+    titleSpan.className = 'goods-card-title-edit';
+    titleSpan.textContent = title || '新分类';
+    h4.appendChild(titleSpan);
+    var tag = document.createElement('span');
+    tag.className = 'tag tag-red';
+    tag.textContent = '需自备';
+    h4.appendChild(document.createTextNode(' '));
+    h4.appendChild(tag);
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'del-card-btn';
+    delBtn.textContent = '\u00d7 删除此分类';
+    h4.appendChild(delBtn);
+    card.appendChild(h4);
+    var ul = document.createElement('ul');
+    var addLi = document.createElement('li');
+    addLi.className = 'goods-add-item';
+    addLi.innerHTML = '<button type="button">+ 添加物品</button>';
+    ul.appendChild(addLi);
+    card.appendChild(ul);
+    return card;
+  }
+
+  function setupGoodsCardControls(card) {
+    // 包装已有li的文字 + 添加删除按钮
+    card.querySelectorAll('li:not(.goods-add-item)').forEach(function(li) {
+      wrapItemText(li);
+      if (!li.querySelector('.del-item-btn')) {
+        var del = document.createElement('span');
+        del.className = 'del-item-btn';
+        del.textContent = '\u00d7';
+        del.title = '删除';
+        li.appendChild(del);
+      }
+    });
+    // 标题可编辑（稳健版：提取h4中非标签、非删除按钮的文本）
+    var h4 = card.querySelector('h4');
+    if (h4 && !h4.querySelector('.goods-card-title-edit')) {
+      var tag = h4.querySelector('.tag');
+      var tagClone = tag ? tag.cloneNode(true) : null;
+      var delCardBtn = h4.querySelector('.del-card-btn');
+      // 提取标题文本：遍历子节点，排除.tag和.del-card-btn
+      var titleText = '';
+      h4.childNodes.forEach(function(node) {
+        if (node.nodeType === 3) {
+          titleText += node.textContent;
+        } else if (node.nodeType === 1) {
+          if (!node.classList || (!node.classList.contains('tag') && !node.classList.contains('del-card-btn'))) {
+            titleText += node.textContent;
+          }
+        }
+      });
+      titleText = titleText.trim();
+      h4.innerHTML = '';
+      var titleSpan = document.createElement('span');
+      titleSpan.className = 'goods-card-title-edit';
+      titleSpan.setAttribute('contenteditable', 'true');
+      titleSpan.textContent = titleText;
+      h4.appendChild(titleSpan);
+      if (tagClone) {
+        h4.appendChild(document.createTextNode(' '));
+        h4.appendChild(tagClone);
+      }
+    }
+    // 删除分类按钮
+    if (h4 && !h4.querySelector('.del-card-btn')) {
+      var delCard = document.createElement('button');
+      delCard.type = 'button';
+      delCard.className = 'del-card-btn';
+      delCard.textContent = '\u00d7 删除此分类';
+      h4.appendChild(delCard);
+    }
+    // 添加物品按钮
+    var ul = card.querySelector('ul');
+    if (ul && !ul.querySelector('.goods-add-item')) {
+      var addLi = document.createElement('li');
+      addLi.className = 'goods-add-item';
+      addLi.innerHTML = '<button type="button">+ 添加物品</button>';
+      ul.appendChild(addLi);
+    }
+  }
+
+  function setupGoodsEditControls() {
+    var grid = document.querySelector('.goods-grid');
+    if (!grid) return;
+    // 事件委托（只绑定一次）
+    if (grid.dataset.editReady) return;
+    grid.dataset.editReady = 'true';
+
+    grid.addEventListener('click', function(e) {
+      // 非编辑模式下禁止增删操作
+      if (!editMode) return;
+      // 删除物品
+      if (e.target.classList.contains('del-item-btn')) {
+        e.stopPropagation();
+        e.target.closest('li').remove();
+        autoSave();
+        return;
+      }
+      // 添加物品
+      var addBtn = e.target.closest('.goods-add-item button');
+      if (addBtn) {
+        var ul = addBtn.closest('ul');
+        var addLi = addBtn.closest('.goods-add-item');
+        var newLi = createGoodsItem('新物品');
+        ul.insertBefore(newLi, addLi);
+        var textSpan = newLi.querySelector('.goods-item-text');
+        if (textSpan) {
+          textSpan.setAttribute('contenteditable', 'true');
+          textSpan.focus();
+          // 选中全部文字方便直接输入
+          var range = document.createRange();
+          range.selectNodeContents(textSpan);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        autoSave();
+        return;
+      }
+      // 删除分类
+      if (e.target.classList.contains('del-card-btn')) {
+        e.stopPropagation();
+        var card = e.target.closest('.goods-card');
+        var titleEl = card.querySelector('.goods-card-title-edit');
+        var titleText = titleEl ? titleEl.textContent : '此分类';
+        if (confirm('确定删除整个「' + titleText + '」分类吗？此操作不可撤销。')) {
+          card.remove();
+          autoSave();
+        }
+        return;
+      }
+      // 添加分类
+      var addCardBtn = e.target.closest('.goods-add-card button');
+      if (addCardBtn) {
+        var newCard = createGoodsCard('新分类');
+        var addCardDiv = grid.querySelector('.goods-add-card');
+        if (addCardDiv) {
+          grid.insertBefore(newCard, addCardDiv);
+        } else {
+          grid.appendChild(newCard);
+        }
+        var titleEdit = newCard.querySelector('.goods-card-title-edit');
+        if (titleEdit) {
+          titleEdit.setAttribute('contenteditable', 'true');
+          titleEdit.focus();
+          var r = document.createRange();
+          r.selectNodeContents(titleEdit);
+          var s = window.getSelection();
+          s.removeAllRanges();
+          s.addRange(r);
+        }
+        autoSave();
+        return;
+      }
+    });
+
+    // 为已有卡片设置控件
+    grid.querySelectorAll('.goods-card').forEach(function(card) {
+      setupGoodsCardControls(card);
+    });
+
+    // 底部添加分类按钮
+    if (!grid.querySelector('.goods-add-card')) {
+      var addCardDiv = document.createElement('div');
+      addCardDiv.className = 'goods-add-card';
+      addCardDiv.innerHTML = '<button type="button">+ 添加新分类</button>';
+      grid.appendChild(addCardDiv);
+    }
+  }
+
+  // 设置物资清单增删控件
+  setupGoodsEditControls();
+  // 设置各板块增删功能
+  setupTimelineEditControls();
+  setupFlowChecklistControls();
+  setupTableRowControls();
+  setupRoleCardControls();
+  setupFlowCardControls();
+
+  // === 时间线列表项增删功能 ===
+  function setupTimelineEditControls() {
+    document.querySelectorAll('.tl-desc ul').forEach(function(ul) {
+tdocument.querySelectorAll("table tbody").forEach(function(tb) { recalculateRowspans(tb); });
+      // 添加删除按钮到已有列表项
+      ul.querySelectorAll('li:not(.add-item-li)').forEach(function(li) {
+        if (li.querySelector('.del-item-btn')) return;
+        var del = document.createElement('span');
+        del.className = 'del-item-btn';
+        del.textContent = '×';
+        del.title = '删除';
+        li.appendChild(del);
+      });
+      // 添加"新增"按钮
+      if (!ul.querySelector('.add-item-li')) {
+        var addLi = document.createElement('li');
+        addLi.className = 'add-item-li';
+        addLi.innerHTML = '<span class="add-item-btn">+ 添加事项</span>';
+        ul.appendChild(addLi);
+      }
+    });
+  }
+
+  // === 当天流程清单增删功能 ===
+  function setupFlowChecklistControls() {
+    document.querySelectorAll('.flow-card .checklist').forEach(function(cl) {
+      // 添加删除按钮到已有标签
+      cl.querySelectorAll('label:not(.add-item-label)').forEach(function(label) {
+        if (label.querySelector('.del-item-btn')) return;
+        var del = document.createElement('span');
+        del.className = 'del-item-btn';
+        del.textContent = '×';
+        del.title = '删除';
+        label.appendChild(del);
+      });
+      // 添加"新增"按钮
+      if (!cl.querySelector('.add-item-label')) {
+        var addLabel = document.createElement('label');
+        addLabel.className = 'add-item-label';
+        addLabel.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;border:1px dashed #ddd;border-radius:6px;padding:3px 8px;color:#aaa;cursor:pointer;font-size:12px;gap:3px;';
+        addLabel.innerHTML = '+ 添加待办';
+        cl.appendChild(addLabel);
+      }
+    });
+  }
+
+  // === 当天流程卡片增删功能 ===
+  function setupFlowCardControls() {
+    var dayFlow = document.querySelector('.day-flow');
+    if (!dayFlow) return;
+    if (dayFlow.dataset.flowReady) return;
+    dayFlow.dataset.flowReady = 'true';
+
+    // 事件委托
+    dayFlow.addEventListener('click', function(e) {
+      if (!editMode) return;
+      // 删除卡片
+      if (e.target.classList.contains('del-card-btn')) {
+        e.stopPropagation();
+        var card = e.target.closest('.flow-card');
+        if (card) {
+          var titleEl = card.querySelector('.title');
+          var titleText = titleEl ? titleEl.textContent.trim() : '此模块';
+          if (confirm('确定删除「' + titleText + '」模块吗？')) {
+            card.remove();
+            autoSave();
+          }
+        }
+        return;
+      }
+      // 添加卡片
+      if (e.target.closest('.flow-add-card button')) {
+        var newCard = document.createElement('div');
+        newCard.className = 'flow-card';
+        newCard.innerHTML =
+          '<div class="flow-time"><div class="t editable">00:00</div><div class="d editable">时段</div></div>' +
+          '<div class="flow-body">' +
+          '  <div class="title editable">新环节</div>' +
+          '  <div class="detail editable">描述</div>' +
+          '  <div class="checklist"></div>' +
+          '</div>';
+        // 添加删除按钮
+        var delBtn = document.createElement('span');
+        delBtn.className = 'del-card-btn';
+        delBtn.textContent = '×';
+        delBtn.title = '删除此模块';
+        newCard.appendChild(delBtn);
+        // 插入到添加按钮之前
+        var addBtn = dayFlow.querySelector('.flow-add-card');
+        if (addBtn) {
+          dayFlow.insertBefore(newCard, addBtn);
+        } else {
+          dayFlow.appendChild(newCard);
+        }
+        // 为新卡片设置清单控件
+        var cl = newCard.querySelector('.checklist');
+        if (cl) {
+          var addLabel = document.createElement('label');
+          addLabel.className = 'add-item-label';
+          addLabel.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;border:1px dashed #ddd;border-radius:6px;padding:3px 8px;color:#aaa;cursor:pointer;font-size:12px;gap:3px;';
+          addLabel.innerHTML = '+ 添加待办';
+          cl.appendChild(addLabel);
+        }
+        autoSave();
+        return;
+      }
+    });
+
+    // 为已有卡片添加删除按钮
+    dayFlow.querySelectorAll('.flow-card').forEach(function(card) {
+      if (card.querySelector('.del-card-btn')) return;
+      var delBtn = document.createElement('span');
+      delBtn.className = 'del-card-btn';
+      delBtn.textContent = '×';
+      delBtn.title = '删除此模块';
+      card.appendChild(delBtn);
+    });
+
+    // 底部添加卡片按钮
+    if (!dayFlow.querySelector('.flow-add-card')) {
+      var addDiv = document.createElement('div');
+      addDiv.className = 'flow-add-card';
+      addDiv.innerHTML = '<button type="button">+ 添加环节</button>';
+      dayFlow.appendChild(addDiv);
+    }
+  }
+
+  // === 表格行增删功能 ===
+  function setupTableRowControls() {
+    document.querySelectorAll('table').forEach(function(table) {
+      var tbody = table.querySelector('tbody');
+      if (!tbody) return;
+      // 如果已有删除列则跳过
+      if (tbody.querySelector('.del-td')) return;
+
+      var headerRow = table.querySelector('thead tr');
+      var colCount = headerRow ? headerRow.children.length : 3;
+
+      // 在表头添加"操作"列（对应删除按钮列）
+      if (headerRow) {
+        var opTh = document.createElement('th');
+        opTh.className = 'del-th';
+        opTh.textContent = '操作';
+        opTh.style.cssText = 'width:36px;text-align:center;';
+        headerRow.appendChild(opTh);
+      }
+
+      // 为每一行添加删除按钮
+      tbody.querySelectorAll('tr').forEach(function(tr) {
+        if (tr.querySelector('.del-td')) return;
+        // 跳过合计行
+        if (tr.textContent.indexOf('合计') >= 0) return;
+        var delTd = document.createElement('td');
+        delTd.className = 'del-td';
+        delTd.textContent = '×';
+        delTd.title = '删除此行';
+        tr.appendChild(delTd);
+      });
+
+      // 添加"新增行"按钮（colspan = 原列数 + 操作列）
+      if (!tbody.querySelector('.add-tr')) {
+        var addTr = document.createElement('tr');
+        addTr.className = 'add-tr';
+        var addTd = document.createElement('td');
+        addTd.setAttribute('colspan', Math.max(colCount + 1, 3));
+        addTd.className = 'add-row-btn';
+        addTd.textContent = '+ 添加行';
+        addTr.appendChild(addTd);
+        tbody.appendChild(addTr);
+      }
+    });
+  }
+
+  // === 人员分工卡片增删功能 ===
+  function setupRoleCardControls() {
+    var grid = document.querySelector('.role-grid');
+    if (!grid) return;
+    if (grid.dataset.roleReady) return;
+    grid.dataset.roleReady = 'true';
+
+    // 事件委托（仅编辑模式下生效）
+    grid.addEventListener('click', function(e) {
+      // 非编辑模式下禁止增删操作
+      if (!editMode) return;
+      // 删除角色
+      if (e.target.classList.contains('del-item-btn') && e.target.closest('.role-card')) {
+        e.stopPropagation();
+        var card = e.target.closest('.role-card');
+        var nameEl = card.querySelector('.role-name');
+        var nameText = nameEl ? nameEl.textContent.trim() : '此角色';
+        if (confirm('确定删除「' + nameText + '」吗？')) {
+          card.remove();
+          autoSave();
+        }
+        return;
+      }
+      // 添加角色
+      if (e.target.closest('.add-role-card button')) {
+        var newCard = document.createElement('div');
+        newCard.className = 'role-card';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'role-cb';
+        cb.title = '标记已确认';
+        var icon = document.createElement('div');
+        icon.className = 'role-icon';
+        icon.textContent = '?';
+        var info = document.createElement('div');
+        info.className = 'role-info';
+        var nameDiv = document.createElement('div');
+        nameDiv.className = 'role-name editable';
+        nameDiv.setAttribute('contenteditable', 'true');
+        nameDiv.textContent = '新角色';
+        var descDiv = document.createElement('div');
+        descDiv.className = 'role-desc editable';
+        descDiv.setAttribute('contenteditable', 'true');
+        descDiv.textContent = '职责描述';
+        info.appendChild(nameDiv);
+        info.appendChild(descDiv);
+        var person = document.createElement('div');
+        person.className = 'role-person editable';
+        person.setAttribute('contenteditable', 'true');
+        person.textContent = '负责人：___';
+        var del = document.createElement('span');
+        del.className = 'del-item-btn';
+        del.textContent = '×';
+        del.title = '删除此角色';
+        del.style.cssText = 'margin-left:auto;align-self:flex-start;';
+
+        newCard.appendChild(cb);
+        newCard.appendChild(icon);
+        newCard.appendChild(info);
+        newCard.appendChild(person);
+        newCard.appendChild(del);
+
+        var addBtn = grid.querySelector('.add-role-card');
+        if (addBtn) {
+          grid.insertBefore(newCard, addBtn);
+        } else {
+          grid.appendChild(newCard);
+        }
+        autoSave();
+        return;
+      }
+    });
+
+    // 添加删除按钮到已有卡片
+    grid.querySelectorAll('.role-card').forEach(function(card) {
+      if (card.querySelector('.del-item-btn')) return;
+      var del = document.createElement('span');
+      del.className = 'del-item-btn';
+      del.textContent = '×';
+      del.title = '删除此角色';
+      del.style.cssText = 'margin-left:auto;align-self:flex-start;';
+      card.appendChild(del);
+    });
+
+    // 底部添加角色按钮
+    if (!grid.querySelector('.add-role-card')) {
+      var addCard = document.createElement('div');
+      addCard.className = 'add-role-card';
+      addCard.innerHTML = '<button type="button">+ 添加角色</button>';
+      grid.appendChild(addCard);
+    }
+  }
+
+  // === 自动计算表格rowspan ===
+  function recalculateRowspans(tbody) {
+    if (!tbody) return;
+    // 收集所有数据行（排除add-tr）
+    var rows = [];
+    for (var ri = 0; ri < tbody.children.length; ri++) {
+      var child = tbody.children[ri];
+      if (child.tagName === 'TR' && !child.classList.contains('add-tr')) {
+        rows.push(child);
+      }
+    }
+    // 遍历每一行，找到带rowspan的td，重新计算跨行数
+    for (var i = 0; i < rows.length; i++) {
+      var tds = rows[i].querySelectorAll('td');
+      var catTd = null;
+      for (var j = 0; j < tds.length; j++) {
+        if (tds[j].hasAttribute('rowspan')) {
+          catTd = tds[j];
+          break;
+        }
+      }
+      if (!catTd) continue;
+      // 计算从当前行到下一个rowspan（或末尾）的行数
+      var count = 1;
+      for (var k = i + 1; k < rows.length; k++) {
+        var nextTds = rows[k].querySelectorAll('td');
+        var hasOwnRowspan = false;
+        for (var l = 0; l < nextTds.length; l++) {
+          if (nextTds[l].hasAttribute('rowspan')) {
+            hasOwnRowspan = true;
+            break;
+          }
+        }
+        if (hasOwnRowspan) break;
+        count++;
+      }
+      if (count <= 1) {
+        catTd.removeAttribute('rowspan');
+      } else {
+        catTd.setAttribute('rowspan', count);
+      }
+    }
+  }
+
+  // === 全局事件委托（处理时间线/流程/表格的增删点击，仅在编辑模式下生效） ===
+  document.addEventListener('click', function(e) {
+    // 非编辑模式下禁止所有增删操作
+    if (!editMode) {
+      // 如果点击了增删相关元素，阻止默认行为
+      if (e.target.closest('.del-item-btn, .add-item-btn, .add-item-label, .del-td, .add-row-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      return;
+    }
+    // 时间线删除
+    if (e.target.classList.contains('del-item-btn') && e.target.closest('.tl-desc')) {
+      e.stopPropagation();
+      var li = e.target.closest('li');
+      if (li && confirm('确定删除此事项吗？')) {
+        li.remove();
+        autoSave();
+      }
+      return;
+    }
+    // 时间线添加
+    if (e.target.classList.contains('add-item-btn') && e.target.closest('.tl-desc')) {
+      var ul = e.target.closest('ul');
+      var addLi = e.target.closest('.add-item-li');
+      if (ul && addLi) {
+        var newLi = document.createElement('li');
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        newLi.appendChild(cb);
+        newLi.appendChild(document.createTextNode(' 新事项'));
+        var del = document.createElement('span');
+        del.className = 'del-item-btn';
+        del.textContent = '×';
+        del.title = '删除';
+        newLi.appendChild(del);
+        ul.insertBefore(newLi, addLi);
+        autoSave();
+      }
+      return;
+    }
+    // 当天流程清单删除
+    if (e.target.classList.contains('del-item-btn') && e.target.closest('.checklist')) {
+      e.stopPropagation();
+      var label = e.target.closest('label');
+      if (label && confirm('确定删除此待办项吗？')) {
+        label.remove();
+        autoSave();
+      }
+      return;
+    }
+    // 当天流程清单添加
+    if (e.target.closest('.add-item-label')) {
+      e.preventDefault();
+      var cl = e.target.closest('.checklist');
+      var addLabel = e.target.closest('.add-item-label');
+      if (cl && addLabel) {
+        var newLabel = document.createElement('label');
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        newLabel.appendChild(cb);
+        newLabel.appendChild(document.createTextNode(' 新待办'));
+        var del = document.createElement('span');
+        del.className = 'del-item-btn';
+        del.textContent = '×';
+        del.title = '删除';
+        newLabel.appendChild(del);
+        cl.insertBefore(newLabel, addLabel);
+        autoSave();
+      }
+      return;
+    }
+    // 表格行删除（含rowspan更新）
+    if (e.target.classList.contains('del-td')) {
+      e.stopPropagation();
+      var tr = e.target.closest('tr');
+      if (tr && confirm('确定删除此行吗？')) {
+        var tbody = tr.closest('tbody');
+        tr.remove();
+        if (tbody) recalculateRowspans(tbody);
+        autoSave();
+      }
+      return;
+    }
+    // 表格行添加
+    if (e.target.classList.contains('add-row-btn')) {
+      var tbody = e.target.closest('tbody');
+      var addTr = e.target.closest('.add-tr');
+      if (tbody && addTr) {
+        var headerRow = tbody.closest('table').querySelector('thead tr');
+        var colCount = headerRow ? headerRow.children.length : 3;
+        var newTr = document.createElement('tr');
+        for (var i = 0; i < colCount; i++) {
+          var td = document.createElement('td');
+          if (i === 0) {
+            td.className = 'cb-td';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            td.appendChild(cb);
+          } else {
+            td.textContent = '新';
+            td.setAttribute('contenteditable', 'true');
+          }
+          newTr.appendChild(td);
+        }
+        var delTd = document.createElement('td');
+        delTd.className = 'del-td';
+        delTd.textContent = '×';
+        newTr.appendChild(delTd);
+        tbody.insertBefore(newTr, addTr);
+        autoSave();
+      }
+      return;
+    }
+  });
+
+  // 人员分工负责人栏默认可编辑
+  var persons = document.querySelectorAll(".role-person");
+  persons.forEach(function(el) {
+    el.setAttribute("contenteditable", "true");
+    el.addEventListener("focus", function() {
+      if (el.textContent.trim() === "负责人：___") {
+        el.textContent = "负责人：";
+      }
+    });
+  });
+
+  // === 时间节点自动折叠 ===
+  function autoCollapseByDate() {
+    var now = new Date();
+
+    // 时间线项目折叠
+    document.querySelectorAll('.tl-item[data-end-date]').forEach(function(item) {
+      var endStr = item.getAttribute('data-end-date');
+      var startStr = item.getAttribute('data-start-date');
+      var endDate = new Date(endStr + 'T23:59:59');
+      var startDate = startStr ? new Date(startStr + 'T00:00:00') : null;
+
+      if (endDate < now) {
+        item.classList.add('collapsed', 'past');
+      } else if (startDate && startDate <= now && endDate >= now) {
+        item.classList.add('current');
+      }
+    });
+
+    // 点击日期栏展开/折叠时间线
+    document.querySelectorAll('.tl-item[data-end-date] .tl-date').forEach(function(dateEl) {
+      dateEl.addEventListener('click', function(e) {
+        if (document.body.classList.contains('edit-mode')) return;
+        if (dateEl.getAttribute('contenteditable') === 'true') return;
+        var item = dateEl.closest('.tl-item');
+        if (item) item.classList.toggle('collapsed');
+      });
+    });
+
+    // === Section级别折叠 ===
+    document.querySelectorAll('.section[data-end-date]').forEach(function(section) {
+      var sEndStr = section.getAttribute('data-end-date');
+      var sStartStr = section.getAttribute('data-start-date');
+      var sEndDate = new Date(sEndStr + 'T23:59:59');
+      var sStartDate = sStartStr ? new Date(sStartStr + 'T00:00:00') : null;
+
+      if (sEndDate < now) {
+        section.classList.add('collapsed', 'past');
+      } else if (sStartDate && sStartDate <= now && sEndDate >= now) {
+        section.classList.add('current');
+      }
+
+      // 点击标题栏展开/折叠整个section
+      var sTitle = section.querySelector('.section-title');
+      if (sTitle) {
+        sTitle.addEventListener('click', function(e) {
+          if (document.body.classList.contains('edit-mode')) return;
+          if (sTitle.getAttribute('contenteditable') === 'true') return;
+          section.classList.toggle('collapsed');
+        });
+      }
+    });
+
+    // 婚礼当天流程卡片折叠（按时间自动判断）
+    document.querySelectorAll('.flow-card').forEach(function(card) {
+      var timeEl = card.querySelector('.flow-time .t');
+      if (!timeEl) return;
+      var timeStr = timeEl.textContent.trim();
+      var parts = timeStr.split(':');
+      if (parts.length < 2) return;
+      var cardDateTime = new Date(2026, 9, 1, parseInt(parts[0], 10), parseInt(parts[1], 10));
+      card.setAttribute('data-datetime', cardDateTime.toISOString());
+
+      if (cardDateTime < now) {
+        card.classList.add('collapsed', 'past');
+      }
+
+      var timeBar = card.querySelector('.flow-time');
+      if (timeBar) {
+        timeBar.addEventListener('click', function(e) {
+          if (document.body.classList.contains('edit-mode')) return;
+          card.classList.toggle('collapsed');
+        });
+      }
+    });
+  }
+
+  autoCollapseByDate();
+})();
+</script>
+</body>
+</html>
